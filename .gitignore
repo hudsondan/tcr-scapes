@@ -1,0 +1,6 @@
+~*.pyc
+.DS_Store
+**.pyc
+.venv/**
+venv/**
+data/combined_deduplicated_clean_ags.csv
