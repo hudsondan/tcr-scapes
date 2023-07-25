@@ -1,0 +1,625 @@
+---
+title: "Results: Comparison of TCR clustering algorithms"
+output: html_notebook
+---
+
+
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library("scales")
+library(reshape2)
+library(ggpubr)
+library(tidyr)
+library(tidyverse)
+library(paletteer)
+```
+
+
+```{r}
+# Figure 1: Global model performance
+
+# Load in results files
+get_files<-function(directory_path, file){
+ d<-data.frame()
+expts<-lapply(str_split(list.dirs(directory_path),'/'),'[',4)
+expts<-expts[!is.na(expts)]
+for (e in expts){
+  dx<-read.csv(paste(directory_path, e, paste('/',file,'.csv',sep=''),sep='/'))
+  d<-rbind(d,dx)
+} 
+return(d)
+}
+
+# Combine matrix and clustering times for TCRdist
+
+str_rep<-function(str){
+  return(replace(str,is.na(str),0))
+}
+
+get_time<-function(df){
+  t<-lapply(str_split(trimws(gsub("[^0-9.]",' ',df$Runtime)),' '),as.double)
+  df$runtime<-lapply(lapply(lapply(t,str_rep),sum),'[[',1)
+  df$time<-as.numeric(df$runtime)
+  return(df)
+}
+
+# res<-read.csv('../results/Full_run_500/20230711_101631/total.csv')
+# res<-read.csv('../results/Downsampling/20230713_085037/total.csv')
+# res<-get_time(res)
+
+ds <-get_time(get_files('../results/Downsampling','total'))
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+```
+
+```{r}
+
+# Is there a correlation between metrics?
+
+plot_metricorr<-function(res, var1,var2){
+  s1=14
+  s2=8
+  var1<-ensym(var1)
+  var2<-ensym(var2)
+  g1<-res%>%
+    ggplot(aes(x=!!var1,y=!!var2))+
+    geom_point()+
+    geom_smooth(method='lm')+
+    theme_classic()+
+    xlim(0,1.05)+
+    ylim(0,1.05)+
+    scale_y_continuous(labels = percent,limits=c(0,1),breaks=c(0,0.5,1))+
+    scale_x_continuous(labels = percent,limits=c(0,1),breaks=c(0,0.5,1))+
+
+    theme(plot.title=element_text(size=s1,hjust=0.5),
+              axis.title.x =element_text(size=s2),
+              axis.title.y=element_text(size=s2),
+              axis.text.x=element_text(size=s2),
+              axis.text.y=element_text(size=s2),
+              legend.position='right',
+              legend.text=element_text(size=s2))+
+      guides(fill=guide_legend(title=NULL,ncol=1))
+  return(g1)
+}
+
+res_sub<-subset(ds,!(ds$Model %in% c('random','length')))
+g1 <- plot_metricorr(res_sub,'purity','f1.score')
+g2 <- plot_metricorr(res_sub,'consistency','f1.score')
+g3 <- plot_metricorr(res_sub,'ami','f1.score')
+g4 <- plot_metricorr(res_sub,'retention','f1.score')
+g5 <- plot_metricorr(res_sub,'precision','f1.score')
+g6 <- plot_metricorr(res_sub,'recall','f1.score')
+ggarrange(g1,g2,g3,g4,g5,g6)
+
+```
+```{r}
+
+# Plot model performance and statistical significance
+
+plot_box<-function(df,yvar,title){
+  s1<-12
+  yvar<-ensym(yvar)
+  p<-df %>%
+    ggplot(aes(x=reorder(Model,-!!yvar), y= !!yvar,fill=Model))+
+    geom_boxplot(position='dodge')+
+    geom_point(pch=21,position='dodge')+
+    # facet_wrap('Chain')+
+    labs(x=NULL,y='F1-score\n',title=title)+
+    ylim(0,1)+
+    theme_classic()+
+    guides(fill=guide_legend(title='Model',ncol=1))+
+    scale_y_continuous(labels = percent,limits=c(0,1),breaks=c(0,0.5,1))+
+    scale_fill_manual(values=cbPalette, breaks= c('clustcr','gliph2','GIANA','ismart','tcrdist3','hamming','length','random'))+
+    theme(plot.title=element_text(size=s1),
+            axis.title.x =element_text(size=s1),
+            axis.title.y=element_text(size=s1),
+            axis.text.y=element_text(size=s1),
+            legend.position='none',
+            axis.text.x=element_text(size=s1,angle=90))
+  return(p)
+}
+
+post_hoc <-function(aov, variable){
+  mod<-as.data.frame(TukeyHSD(aov, which = variable)[[1]])
+  names(mod)[names(mod) == "p adj"] <- "p"
+  return(mod[order(mod$p),])
+}
+
+str_strip<-function(str, selector){
+  str<-str_split(str,'-')[[1]][selector]
+  return(as.character(gsub('[[:digit:]]+','',str)))
+}
+
+prob_map<-function(p){
+  s<-ifelse(p>=0.05,"n.s",
+            ifelse((p<0.05)&(p>=0.001),"p < 0.05",
+                   ifelse((p<0.001)&(p>=0.0001),"p < 0.001",
+                          "p < 0.0001")))
+  return(s)
+}
+
+plot_aov_probs<-function(aov,title){
+  # palette<-rev(paletteer_c("grDevices::Oslo", 4))
+palette <- c('n.s'='white',
+            'p < 0.05'='#A4B8DDFF',
+            'p < 0.001'='#3C79C0FF',
+            'p < 0.0001'='#0E2037FF')
+  s1<-12
+  aov$model1<-as.character(lapply(rownames(aov),str_strip,1))
+  aov$model2<-as.character(lapply(rownames(aov),str_strip,2))
+  aov$significance<-as.character(lapply(aov$p,prob_map))
+  aov2<-aov
+  names(aov2)[names(aov2) == "model1"] <- "model"
+  names(aov2)[names(aov2) == "model2"] <- "model1"
+  names(aov2)[names(aov2) == "model"] <- "model2"
+  aov<-rbind(aov,aov2)
+  p<-aov%>%
+    ggplot(aes(x=model1,y=model2,fill=significance))+
+    geom_tile(color = "black") +
+    coord_fixed()+
+    theme_classic()+
+    scale_fill_manual(values = palette, breaks = c('n.s',
+                                                     'p < 0.05',
+                                                     'p < 0.001',
+                                                     'p < 0.0001'))+
+    labs(x=NULL,y=NULL,fill=NULL,title=title)+
+    theme(plot.title=element_text(size=s1, hjust=0.5),
+          axis.title.x =element_text(size=s1),
+          axis.title.y=element_text(size=s1),
+          legend.position='right',
+          legend.title=element_text(size=s1),
+          legend.text=element_text(size=s1-2),
+          axis.text.x=element_text(angle=90,vjust=0.5,hjust=0.5,size=s1),
+          axis.text.y=element_text(size=s1))
+
+  return(p)
+}
+
+# Inspect mean values and confidence 
+
+getscores<-function(df,metric, N){
+  # Compute 95% confidence with student t statistic
+  table<-df%>%
+    data.frame()%>%
+      melt(id=c('Model'),measure=c(metric))%>%
+        group_by(Model,variable)%>%
+          summarise(mean=mean(value),
+                      sd=sd(value),
+                    )
+  table$se<-table$sd/sqrt(N)
+  t<-qt(p=0.05/2, df=N-1,lower.tail=F)
+  table$err<-table$se*t
+  table$metric<-paste(round(table$mean,2),' ± ',round(table$err,2), sep='')
+  table<-table[order(table[,'mean'], decreasing=TRUE ),]
+  table<-select(table,c('Model',metric))
+  names(table)<-c('Model',metric)
+
+return(table)
+  
+}
+
+performance<-function(results,title){
+  v<-plot_box(results,'f1.score',title)
+  aov<-aov(f1.score ~Model, data=results)
+  mod<-post_hoc(aov,'Model')
+  t<-getscores(results,'f1.score',25)
+  p<-plot_aov_probs(mod,'Significance\n')
+  
+  return(ggarrange(v,p))
+}
+
+# detach(package:plyr)
+performance(ds,'Performance: All chains\n')
+
+
+```
+```{r}
+
+
+score<-function(results, N){
+  f1<-getscores(results,'f1.score',N)
+  ret<-getscores(results,'retention',N)
+  t<-merge(f1,ret)
+  t<-t[order(t[,'f1.score'], decreasing=TRUE ),]
+  return(t)
+}
+
+
+t<-score(ds,25)
+write.csv(t,paste('../results/Tables/all_chains.csv'))
+t
+```
+
+```{r}
+# Alpha chains
+alpha<-subset(ds,ds$Chain=='alpha')
+performance(alpha,'Performance: Alpha chains\n')
+```
+```{r}
+t<-score(alpha,25)
+write.csv(t,paste('../results/Tables/alpha.csv'))
+t
+```
+
+```{r}
+# Beta chains
+# detach(package:plyr)
+beta<-subset(ds,ds$Chain=='beta')
+performance(beta,'Performance: Beta chains\n')
+```
+```{r}
+t<-score(beta,25)
+write.csv(t,paste('../results/Tables/beta.csv'))
+t
+```
+
+
+```{r}
+# check performance by epitope
+
+plot_box_epitope<-function(df,yvar,title){
+  s1<-12
+  yvar<-ensym(yvar)
+  p<-df %>%
+    ggplot(aes(x=reorder(Model,-!!yvar), y= !!yvar,fill=Model))+
+    geom_boxplot(position='dodge')+
+    geom_point(pch=21)+
+    facet_wrap('epitope',scales='free_y',)+
+    labs(x=NULL,y=NULL,title=title)+
+    ylim(0,1)+
+    theme_classic()+
+    guides(fill=guide_legend(title='Model',ncol=1))+
+    scale_y_continuous(labels = percent,limits=c(0,1),breaks=c(0,0.5,1))+
+    scale_fill_manual(values=cbPalette, breaks= c('clustcr','gliph2','GIANA','ismart','tcrdist3','hamming','length','random'))+
+    theme(plot.title=element_text(size=s1,hjust=0.5),
+            axis.title.x =element_text(size=s1),
+            axis.title.y=element_text(size=s1),
+            axis.text.y=element_text(size=s1),
+            legend.position='none',
+            axis.text.x=element_text(size=s1,angle=90))
+  return(p)
+}
+
+
+library(plyr)
+results_eps <-get_time(get_files('../results/Downsampling','eps'))
+results_eps<-subset(results_eps, results_eps$Downsample==500)
+f1<-plot_box_epitope(results_eps,'f1.score','F1-score\n')
+f1
+
+```
+```{r}
+plot_box_epitope(results_eps,'retention','Retention\n')
+
+```
+```{r}
+getscores_multi<-function(df,metric, var, N){
+  # Compute 95% confidence with student t statistic
+  table<-df%>%
+    data.frame()%>%
+      melt(id=c('Model',var),measure=c(metric))%>%
+        group_by(Model,!!ensym(var),variable)%>%
+          summarise(mean=mean(value),
+                      sd=sd(value),
+                    )
+  table$se<-table$sd/sqrt(N)
+  t<-qt(p=0.05/2, df=N-1,lower.tail=F)
+  table$err<-table$se*t
+  table$metric<-paste(round(table$mean,2),' ± ',round(table$err,2), sep='')
+  table<-table[order(table[,'mean'], decreasing=TRUE ),]
+  table<-select(table,c('Model',metric))
+  names(table)<-c(var,'Model',metric)
+
+return(table)
+  
+}
+
+score_eps<-function(results, var, N){
+  f1<-getscores_multi(results,'f1.score',var, N)
+  ret<-getscores_multi(results,'retention',var, N)
+  t<-merge(f1,ret)
+  t<-t[order(t[,var] ),]
+  return(t)
+}
+
+t<-score_eps(results_eps,'epitope',25)
+t
+write.csv(t,'../results/Tables/epitopes.csv')
+```
+
+
+```{r}
+
+data_summary <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+ return(data_sum)
+}
+
+plot_Ncorr<-function(df){
+  s1=14
+  s2=10
+
+  df<-data_summary(df,'f1.score',c('N_total','Model'))
+  # var<-ensym(var)
+  df$low<-df$f1.score-df$sd
+  df$high<-df$f1.score+df$sd
+  p<-df %>%
+    # ggplot(aes(x=!!var,y=logtime,colour=Model))+
+    ggplot(aes(x=as.factor(N_total),y=f1.score,fill=Model))+
+    geom_bar(stat='identity',position='dodge')+
+    # geom_point(size=1)+
+    # geom_pointrange(aes(ymin=time-sd, ymax=time+sd), position=position_dodge(.9))+
+    geom_errorbar(aes(ymin=low-sd, ymax=high+sd), width=.2,
+                 position=position_dodge(.9))+
+    scale_fill_manual(values=cbPalette,
+                        breaks= c('clustcr','gliph2','GIANA','ismart','tcrdist3','hamming','length','random'))+
+    labs(x='\nN_total',y='F1 Score (s)\n',fill=NULL)+
+    # scale_y_continuous(trans='log10')+
+    theme_classic()+
+    theme(legend.title=element_text(size=s1),
+      legend.text=element_text(size=s1),
+      legend.position='right')+
+    guides(fill=guide_legend(title='Model',ncol=1))+
+    theme(plot.title=element_text(size=s1),
+            axis.title.x =element_text(size=s1),
+            axis.title.y=element_text(size=s1),
+            axis.text.y=element_text(size=s1),
+            axis.text.x=element_text(size=s1))
+    return(p)
+}
+
+plot_Ncorr(ds)
+```
+```{r}
+detach(package:plyr)
+mcpas<-get_files('../results/McPas','total')
+performance(mcpas,'Performance: McPas\n')
+```
+
+
+```{r}
+t<-score(mcpas,5)
+write.csv(t,'../results/Tables/mcpas.csv')
+```
+
+```{r}
+
+
+
+plot_runtime<-function(df,var,hide_legend=FALSE){
+  s1=14
+  s2=10
+
+  df<-data_summary(df,'time',c(var,'Model'))
+  var<-ensym(var)
+  df$low<-df$time-df$sd
+  df$high<-df$time+df$sd
+  p<-df %>%
+    # ggplot(aes(x=!!var,y=logtime,colour=Model))+
+    ggplot(aes(x=!!var,y=time,colour=Model))+
+    geom_line()+
+    geom_point(size=1)+
+    # geom_pointrange(aes(ymin=time-sd, ymax=time+sd), position=position_dodge(.9))+
+    geom_errorbar(aes(ymin=low, ymax=high))+
+    scale_colour_manual(values=cbPalette,
+                        breaks= c('clustcr','gliph2','GIANA','ismart','tcrdist3','hamming','length','random'))+
+    labs(x='# Decoy sequences (1000s)',y='Runtime (s)\n',fill=NULL)+
+    scale_y_continuous(trans='log10', breaks = c(0.01,1,100),labels=c('0.01','1','100'))+
+    scale_x_continuous(labels = function(x) x/1000)+
+    theme_classic()+
+    theme(legend.title=element_text(size=s1),
+      legend.text=element_text(size=s1),
+      legend.position='right')+
+    guides(fill=guide_legend(title='Model',ncol=1))+
+    theme(plot.title=element_text(size=s1),
+            axis.title.x =element_text(size=s1),
+            axis.title.y=element_text(size=s1),
+            axis.text.y=element_text(size=s1),
+            axis.text.x=element_text(size=s1))
+     if (hide_legend==TRUE){
+      p<-p+theme(legend.position="none")
+    }
+    return(p)
+}
+
+# detach(package:plyr)
+olga<-get_files('../results/OLGA','total')
+olga<-get_time(olga)
+unique(olga$N_olga)
+plot_runtime(olga,'N_olga')
+
+```
+
+
+```{r}
+tcrdist<-subset(olga,olga$Model=='tcrdist3')
+t<-lapply(str_split(trimws(gsub("[^0-9.]",' ',tcrdist$Runtime)),' '),as.double)
+ttime<-as.double(lapply(lapply(t,str_rep),'[[',1))
+ctime<-as.double(lapply(lapply(t,str_rep),'[[',3))
+tcrdist$tcrdist<-ttime
+tcrdist$DBSCAN<-ctime
+library(dplyr)
+tcrdist$N_olga<-as.factor(tcrdist$N_olga)
+td<-melt(select(tcrdist,c('N_olga','tcrdist','DBSCAN')),id='N_olga')
+td<-data_summary(td,'value',c('variable','N_olga'))
+s1<-14
+td %>%
+  ggplot(aes(x=N_olga,y=value,fill=variable))+
+  geom_bar(stat='identity',position='stack',colour='black')+
+  # scale_colour_manual(values=cbPalette)+
+  # geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
+  #               position=position_dodge(.9))+
+  labs(x='\nN_Olga',y='Runtime (s)\n',fill=NULL)+
+  # scale_y_continuous(trans='log10')+
+  theme_classic()+
+  theme(legend.title=element_text(size=s1),
+    legend.text=element_text(size=s1),
+    legend.position='right')+
+  guides(fill=guide_legend(title=NULL,ncol=1))+
+  theme(plot.title=element_text(size=s1),
+          axis.title.x =element_text(size=s1),
+          axis.title.y=element_text(size=s1),
+          axis.text.y=element_text(size=s1),
+          axis.text.x=element_text(size=s1))
+```
+```{r}
+
+
+plot_cpus<-function(df){
+  s1=14
+  s2=10
+
+  df<-data_summary(df,'time',c('CPUs','Model','N_olga'))
+  # var<-ensym(var)
+  df$low<-df$time-df$sd
+  df$high<-df$time+df$sd
+  p<-df %>%
+    ggplot(aes(x=Model,y=time,fill=as.factor(CPUs)))+
+    geom_bar(stat='identity',position='dodge')+
+    # geom_point(size=1)+
+    # geom_pointrange(aes(ymin=time-sd, ymax=time+sd), position=position_dodge(.9))+
+    geom_errorbar(aes(ymin=low-sd, ymax=high+sd), width=.2,
+                 position=position_dodge(.9))+
+    scale_fill_manual(values=rev(paletteer_c("grDevices::Oslo", 4)))+
+    labs(x='\nModel',y='Time (s)\n',fill=NULL)+
+    scale_y_continuous(trans='log10')+
+    theme_classic()+
+    theme(legend.title=element_text(size=s1),
+      legend.text=element_text(size=s1),
+      legend.position='right')+
+    guides(fill=guide_legend(title='CPUs',ncol=1))+
+    theme(plot.title=element_text(size=s1),
+            axis.title.x =element_text(size=s1),
+            axis.title.y=element_text(size=s1),
+            axis.text.y=element_text(size=s1),
+            axis.text.x=element_text(size=s1,angle=90))
+    return(p)
+}
+
+detach(package:plyr)
+cp <- get_time(get_files('../results/CPUs','total'))
+plot_cpus(subset(cp,cp$N_olga==10000))
+
+```
+
+```{r}
+plot_decoys<-function(df,yvar,title){
+  s1<-12
+  yvar<-ensym(yvar)
+  df<-data_summary(df,yvar,c('epitope','Model','N_olga'))
+  # var<-ensym(var)
+  df$low<-df$f1.score-df$sd
+  df$high<-df$f1.score+df$sd
+  p<-df %>%
+    ggplot(aes(x=epitope, y= f1.score,fill=as.factor(N_olga)),colour='black')+
+    geom_bar(stat='identity',position='dodge')+
+    geom_errorbar(aes(ymin=low-sd, ymax=high+sd), width=.2,
+                 position=position_dodge(.9))+
+    # geom_point(pch=21)+
+    facet_wrap('Model',nrow=2)+
+    # facet_grid(rows=vars(epitope),cols = vars(N_olga),scales='free_y')+
+    labs(x=NULL,y=NULL,title=title)+
+    ylim(0,1)+
+    theme_classic()+
+    guides(fill=guide_legend(title='N_Olga',ncol=1))+
+    scale_y_continuous(labels = percent,limits=c(0,1),breaks=c(0,0.5,1))+
+    scale_fill_manual(values=c('#A4B8DDFF','#0E2037FF'))+
+    theme(plot.title=element_text(size=s1,hjust=0.5),
+            axis.title.x =element_text(size=s1),
+            axis.title.y=element_text(size=s1),
+            axis.text.y=element_text(size=s1),
+            legend.position='right',
+            axis.text.x=element_text(size=s1,angle=90))
+  return(p)
+}
+
+library(plyr)
+olga_eps <-get_time(get_files('../results/OLGA','eps'))
+olga_eps<-subset(olga_eps, (olga_eps$N_olga%in%c(0,10000))&(olga_eps$epitope!='DECOY'))
+plot_decoys(olga_eps,'f1.score','F1-score\n')
+
+```
+
+
+```{r}
+getscores_multi2<-function(df,metric, var1, var2, N){
+  # Compute 95% confidence with student t statistic
+  table<-df%>%
+    data.frame()%>%
+      melt(id=c('Model',var1, var2),measure=c(metric))%>%
+        group_by(Model,!!ensym(var1),!!ensym(var2),variable)%>%
+          summarise(mean=mean(value),
+                      sd=sd(value),
+                    )
+  table$se<-table$sd/sqrt(N)
+  t<-qt(p=0.05/2, df=N-1,lower.tail=F)
+  table$err<-table$se*t
+  table$metric<-paste(round(table$mean,2),' ± ',round(table$err,2), sep='')
+  table<-table[order(table[,'mean'], decreasing=TRUE ),]
+  table<-select(table,c('Model',metric))
+  names(table)<-c(var1,var2,'Model',metric)
+
+return(table)
+  
+}
+
+f1<-getscores_multi2(olga_eps,'f1.score','epitope','N_olga',5)
+ret<-getscores_multi2(olga_eps,'retention','epitope','N_olga',5)
+t<-merge(f1,ret)
+t<-t[order(t['Epitope',])]
+write.csv(t,'../results/Tables/olga.csv')
+
+```
+
+```{r}
+res_stats<-get_files('../results/Downsampling','stats')
+res_stats$logN<-log10(res_stats$N)
+
+s1=10
+s2=10
+
+
+# r2<-melt(res_b,id=c('logN','epitope','Model'),measure='purity_frequent')
+res_b<-subset(res_stats, ((res_stats$Chain=='beta')&(res_stats$Downsample==500)))
+res_b%>%
+  ggplot(aes(x=N, y=purity_frequent,colour=most_frequent))+
+  geom_point(size=0.5)+
+  facet_wrap('Model')+
+  theme_classic()+
+  scale_colour_manual(values=cbPalette)+
+    labs(x='\n# Clusters',y='Purity\n',colour='Modal Epitope')+
+    theme_classic()+
+    theme(legend.title=element_text(size=s1),
+      legend.text=element_text(size=s1),
+      legend.position='right')+
+    theme(plot.title=element_text(size=s1),
+            axis.title.x =element_text(size=s1),
+            axis.title.y=element_text(size=s1),
+            axis.text.y=element_text(size=s1),
+            axis.text.x=element_text(size=s1))+
+  guides(fill=guide_legend(nrow=1))+
+  scale_x_continuous(trans='log10')+
+  scale_y_continuous(labels = percent,limits=c(0,1),breaks=c(0,0.5,1))
+```
+
+```{r}
+res_b
+data_summary(res_b, 'purity_frequent',c('N','Model','most_frequent'))%>%
+  ggplot(aes(x=N,y=purity_frequent,fill=most_frequent))+
+  geom_density()+
+  # geom_histogram(stat='bin',alpha=0.5,position = position_dodge(width=2))+
+  # geom_bar(stat='identity',position = 'dodge')+
+  facet_wrap('Model')+
+  scale_x_continuous(trans='log10')
+```
+
+

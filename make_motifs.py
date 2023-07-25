@@ -5,18 +5,28 @@ from Bio import SeqIO
 import pandas as pd
 from collections import Counter
 
-def get_motif(sequences,name,output_folder):
-    instances = [Seq(x) for x in sequences]
-    record = [SeqRecord(seq, id=str(s), description='cluster_%s_instance_%s'%(name,str(s)),
-                        annotations={"molecule_type": "protein"}) for s, seq in enumerate(instances)]
+def get_motif(sequences, name, output_folder):
+    '''Produce cluster motifs from input results folder
+    :param sequences: input TCR sequences
+    :type sequences: list
+    :param name: cluster, model and epitope identifier
+    :type name: str
+    :param output_folder: directory for msa and motif files
 
+    '''
+    instances = [Seq(x) for x in sequences] # Create biopython Seq instances
+    record = [SeqRecord(seq, id=str(s), description='cluster_%s_instance_%s'%(name,str(s)),
+                        annotations={"molecule_type": "protein"}) for s, seq in enumerate(instances)]  # Convert to SeqRecord 
+    
+    # Initialise motifs folder
     if not 'Motifs' in os.listdir(output_folder):
         os.mkdir(os.path.join(output_folder,'Motifs'))
     
     dest = '%s/Motifs/%s.fa'%(output_folder,name)
-    SeqIO.write(record,dest,'fasta')
+    SeqIO.write(record,dest,'fasta')    # Write FASTA file for MUSCLE
     out_file= '%s/Motifs/%s_msa.fa'%(output_folder,name)
 
+    
     # cmd='muscle -super5 {} -output {}'.format(dest,out_file) # MUSCLE 5.1.osxarm64
     cmd='muscle -in {} -out {}'.format(dest,out_file) # MUSCLE v3.8.31
 
