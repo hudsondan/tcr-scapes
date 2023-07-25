@@ -3,9 +3,14 @@ import numpy as np
 from sklearn.metrics import precision_recall_fscore_support, classification_report, adjusted_mutual_info_score, balanced_accuracy_score
 
 def get_purity(df):
-    
-    df.loc[:,'epitope']=df['epitope'].replace([np.nan,'',' '],'None')
-    baseline = {ep:len(df[df['epitope']==ep])/len(df) for ep in df['epitope'].unique()}
+    '''Compute cluster purity
+    :param df: input data
+    :type df: pandas DataFrame
+    :return: purity scores
+    :rtype: dict'''
+
+    df.loc[:,'epitope']=df['epitope'].replace([np.nan,'',' '],'None')   # Recode NaNs
+    baseline = {ep:len(df[df['epitope']==ep])/len(df) for ep in df['epitope'].unique()} # Get baseline frequence for eadch epitope
     
     mapper ={}
     purity = {}
@@ -14,22 +19,22 @@ def get_purity(df):
     enriched ={}
     N= {}
     Nd = 0
-    clusters = df['cluster'].value_counts().index
+    clusters = df['cluster'].value_counts().index   # Rank clusters
     for c in  clusters:
-        t = df[df['cluster']==c]
+        t = df[df['cluster']==c]    
         N[c]=len(t)
         if len(t)>0:
-            ep=t['epitope'].value_counts().index[0]
-            freq = {ep:(len(t[t['epitope']==ep])/len(t)) for ep in t['epitope'].unique()}
-            enrich = {k:(v/baseline[k]) for k,v in freq.items()}
-            ep_enrich = max(enrich, key=enrich.get)
-            mapper[c]=ep
-            purity[c]=len(t[t['epitope']==ep])/len(t)
-            frequency[c]=freq
-            enriched[c]=ep_enrich
-            purity_enriched[c]=len(t[t['epitope']==ep_enrich])/len(t)
+            ep=t['epitope'].value_counts().index[0] # Most frequent epitope
+            freq = {ep:(len(t[t['epitope']==ep])/len(t)) for ep in t['epitope'].unique()}   # Get frequency of each epitope 
+            enrich = {k:(v/baseline[k]) for k,v in freq.items()}    # Compute enrichment of each epitope vs. baseline
+            ep_enrich = max(enrich, key=enrich.get) # Find the most enriched
+            mapper[c]=ep    # Record the most frequent epitope
+            purity[c]=len(t[t['epitope']==ep])/len(t)   # Compute purity for the most frequent epitope
+            frequency[c]=freq   # Record the most frequent epitope
+            enriched[c]=ep_enrich # Record the most enriched epitope 
+            purity_enriched[c]=len(t[t['epitope']==ep_enrich])/len(t)   # Compute purity for the most enriched epitope
             if len(t)<=10:
-                Nd+=1
+                Nd+=1   # Find the number of clusters with 10 or fewer members
     
     return {'most_frequent':mapper,
             'most_enriched':enriched,
@@ -39,6 +44,12 @@ def get_purity(df):
             'Nd': Nd}
 
 def get_clustermetrics(df):
+    '''Compute cluster metrics
+    :param df: input data
+    :type df: pandas DataFrame
+    :return: scores
+    :rtype: dict'''
+
     # Find clustered TCRs
     sub = df[~df['cluster'].isnull()]
 

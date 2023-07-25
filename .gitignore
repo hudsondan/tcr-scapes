@@ -4,3 +4,5 @@
 .venv/**
 venv/**
 data/combined_deduplicated_clean_ags.csv
+conga/**
+results/**
