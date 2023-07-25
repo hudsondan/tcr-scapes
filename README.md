@@ -6,7 +6,7 @@ A python repository to accompany {publication pending}
 Installation:
 
 To install this repository, first clone from Github:
->> git clone www.github.com/hudsondan/ClustOx 
+>> git clone https://github.com/hudsondan/ClustOx.git
 
 This benchmarking exercise integrates software making use of both Pip and Conda dependencies. To install, please create a new conda environment from the .yml file provided:
 
