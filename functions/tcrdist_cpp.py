@@ -15,13 +15,25 @@ import pandas as pd # not needed for tcrdist
 
 from conga import util
 from sklearn.cluster import DBSCAN, KMeans
-import time
+
 
 def distmat(tcrs, ids, distances):
-    idx = pd.read_csv(ids,header=None).values.tolist()
-    dists = pd.read_csv(distances,header=None).values.tolist()
-    arr=np.full((len(tcrs),len(tcrs)),-1)
-    idx, dists = [[[int(xi) for xi in x[0].split(' ')] for x in dx] for dx in [idx,dists]]
+    '''Extract distance matrices from tcrdsit output file
+    :param tcrs: input TCRs
+    :type tcrs: Pandas DataFrame
+    :param ids: TCR ID file
+    :type ids: str
+    :param distances: TCR distances file
+    :type ids: str
+    :return arr: tcrdist matrix
+    :rtype arr: array
+
+    '''
+    idx = pd.read_csv(ids,header=None).values.tolist()  # Get IDs
+    dists = pd.read_csv(distances,header=None).values.tolist()  # Get distances
+    arr=np.full((len(tcrs),len(tcrs)),-1)   # Create input array 
+    idx, dists = [[[int(xi) for xi in x[0].split(' ')] for x in dx] for dx in [idx,dists]] # Parse values
+    # Map TCRs to distances
     for i, id in enumerate(idx):
         distlist=dists[i]
         for j,ij  in enumerate(id):
@@ -36,13 +48,33 @@ def calc_tcrdist_matrix_cpp(
         single_chain=None,
         threshold=50,
 ):
+    '''Generate tcrdist matrix with tcrdist C++
+    :param tcrs: input TCRs
+    :type tcrs: list of tuples
+    :param organism: organism for tcrdist reference
+    :type organism: str
+    :param tmpfile_prefix: output name prefix
+    :type tmpfile_prefix: str
+    :param verbose: set verbose
+    :type verbose: bool
+    :param single_chain: use single chain input
+    :type single_chain: bool
+    :param threshold: tcrdist radius threshold
+    :type threshold: int
+    :return D: distance matrix
+    :type D: array'''
+
+    # Set filename
     if tmpfile_prefix is None:
         tmpfile_prefix = Path('./tmp_tcrdists{}'.format(random.randrange(1,10000)))
     tcrs_filename = str(tmpfile_prefix) +'_tcrs.tsv'
+    
+    # Convert tcr input to dataframe and read to file 
     df = pd.DataFrame(dict(va=[x[0][0] for x in tcrs], cdr3a=[x[0][2] for x in tcrs],
                            vb=[x[1][0] for x in tcrs], cdr3b=[x[1][2] for x in tcrs]))
     df.to_csv(tcrs_filename, sep='\t', index=False)
 
+    # Set tcrdist C++ implementation
     if single_chain:
         name = 'find_neighbors_single_chain'
     else:
@@ -56,18 +88,21 @@ def calc_tcrdist_matrix_cpp(
     if not exists(exe):
         print('need to compile c++ exe:', exe)
         exit(1)
-
+    
+    # Find database file
     db_filename = Path.joinpath( Path(util.path_to_tcrdist_cpp_db), 'tcrdist_info_{}.txt'.format( organism ) )
     if not exists(db_filename):
         print('need to create database file:', db_filename)
         exit(1)
+    
+    # Run tcrdist C++
     if single_chain:
-
         cmd = '{} -c {} -t {} -f {} -d {} -o {}'.format(exe, single_chain[0].upper(),str(threshold), tcrs_filename, db_filename, tmpfile_prefix)
     else:
         cmd = '{} -f {} --only_tcrdists -d {} -o {}'.format(exe, tcrs_filename, db_filename, tmpfile_prefix)
-
     util.run_command(cmd, verbose=verbose)
+
+    # Extract distance matrix 
 
     if single_chain:
         ids = str(tmpfile_prefix) +'_nbr{}_indices.txt'.format(threshold)
@@ -76,13 +111,12 @@ def calc_tcrdist_matrix_cpp(
 
     else:
         tcrdist_matrix_filename = str(tmpfile_prefix) +'_tcrdists.txt'
-
         if not exists(tcrdist_matrix_filename):
             print('find_neighbors failed, missing', tcrdist_matrix_filename)
             exit(1)
-        
         D = np.loadtxt(tcrdist_matrix_filename).astype(float)
 
+    # Clear temporary files
     if single_chain:
         files = [tcrs_filename, 
                  ids, 
@@ -94,36 +128,22 @@ def calc_tcrdist_matrix_cpp(
 
     return D
 
-from collections import Counter
-from functions.util_functions import write_lines
-
 def cluster_TCRDist_matrix_cpp(S, seqs, method,cpus=1,hyperparam=None):
     '''
-        Function for clustering of the TCRDist-calculated distance matrix.
-        The function provides several methods for clustering, which include:
-            - Greedy: fixed-distance threshold clustering method that groups
-            of sequences that are connected in a graph.
-            - DBSCAN: density-based clustering method that groups of densely
-            packed points.
-            - Kmeans: iterative clustering approach that partitions the data
-            into k clusters.
-
-        Parameters
-        ----------
-        dm : numpy.array, optional
-            TCRDist-calculated distance matrix. The default is None.
-        cdr3 : pandas.Series, optional
-            pandas.Series containing the input CDR3 sequences. The default is None.
-        gt : pandas.DataFrame, optional
-            Ground truth data. The default is None.
-        method : str, optional
-            Clustering method used to cluster the TCRDist distance matrix. 
-            Available methods include: greedy, DBSCAN and Kmeans.
-            The default is 'DBSCAN'.
-
-        Returns
-        -------
-        Clustering results
+    Cluster distance matrix from tcrdist
+    adapted from https://github.com/svalkiers/clusTCR
+    :param S: Distance matrix from tcrdist
+    :type S: array
+    :param seqs: input data
+    :type seqs: Pandas DataFrame
+    :param method: clustering method
+    :type method: str
+    :param cpus: # CPUs
+    :type cpus: int
+    :param hyperparam: hyperparameter for clustering method
+    :type hyperparam: float
+    :return mapper: cluster results
+    :rtype mapper: dictionary
 
     '''
     # Available methods
@@ -145,20 +165,5 @@ def cluster_TCRDist_matrix_cpp(S, seqs, method,cpus=1,hyperparam=None):
                         n_init=10,
                         n_clusters=int(hyperparam)).fit(S)
         labels = kmeans.labels_
-        # inertia = kmeans.inertia_
-        # write_lines('results/kmeans.csv',[[hyperparam, inertia]])
     
-    # cnts = Counter(labels)
-    # shortlist = [l for l in cnts.keys() if cnts[l]>=2]
     return {seq: label for seq, label in zip(seqs,labels) if label !=-1}
-
-# def get_tcrdist_subset(input_df,chain_selection):
-
-#     info = conga.tcrdist.all_genes.all_genes['human']
-#     if chain_selection in ['alpha','beta']:
-#         input_df=input_df[input_df['v.%s'%(chain_selection)].isin(info.keys())]
-#     else:
-#         for col in ['v.alpha','v.beta']:
-#             input_df=input_df[input_df[col].isin(info.keys())]
-    
-#     return input_df
