@@ -10,7 +10,7 @@ To install this repository, first clone from Github:
 git clone https://github.com/hudsondan/ClustOx.git
 ```
 
-This benchmarking exercise integrates software making use of both Pip and Conda dependencies. To install, please create a new conda environment from the .yml file provided:
+To install, please create a new conda environment from the .yml file provided:
 
 ## Set up environments
 
@@ -43,7 +43,7 @@ To run the benchmarking analysis with default parameters from within an acitvate
 ```
 python run.py
 ```
-To run the programme with a single model and save the outputs
+To run the programme with a single model and save the outputs, for example with a Hamming Distance model
 
 ```
 python run.py -m hamming -s True
@@ -52,7 +52,7 @@ To amend the input data, chain selection, models, or any other parameters, see t
 ```
 python run.py --help
 ```
-Input data should be formatted similarly to data/vdjdb.csv
+Input data should be formatted similarly to data/vdjdb.csv, the minimum requirements are cdr3, v and j gene codes (formatted as cdr.x, v.x, j.x where x= alpha or beta), pairing (alpha, beta or paired) and epitope columns
 
 ## Analyse
 
