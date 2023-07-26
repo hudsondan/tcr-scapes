@@ -42,5 +42,7 @@ To amend the input data, or any other parameters, see the model help documentati
 # Analyse
 
 Plotting and statistical analyses can be found in stats_plots.Rmd
-Motif production for 
+CDR3 amino acid motif production can be accessed in make_motifs.py. This will require prior installation of MUSCLE
+https://www.drive5.com/muscle/manual/install.html
+
 

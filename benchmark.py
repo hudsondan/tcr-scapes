@@ -72,12 +72,14 @@ class Benchmark:
         # Run models, and map cluster outputs to DataFrame
 
         if self.model =='clustcr':
+            # Run ClusTCR
             mapper, t = run_clustcr(data2, 
                                     self.chain, 
                                     self.cpus)
             data2.loc[:,'cluster']=data2['cdr3.%s'%(self.chain)].map(mapper)
 
         if self.model =='GIANA':
+            # Run GIANA
             data2 = get_bio(data2, 
                            self.chain, 
                            False)
@@ -87,10 +89,12 @@ class Benchmark:
             data2.loc[:,'cluster']=data2['bio'].map(mapper)
 
         elif self.model =='gliph2':
+            # Run GLIPH2
             mapper, t = run_gliph2(data2, self.chain)
             data2.loc[:,'cluster']=data2['cdr3.%s'%(self.chain)].map(mapper)
         
         elif self.model =='ismart':
+            # Run iSMART
             data2 = get_bio(data2, 
                            self.chain, 
                            False)
@@ -100,10 +104,12 @@ class Benchmark:
             data2.loc[:,'cluster']=data2['bio'].map(mapper)
 
         elif self.model=='hamming':
+            # Run Hamming
             clusters, t = run_hamming(data2, self.chain)
             data2.loc[:,'cluster']=data2['cdr3.%s'%(self.chain)].map(clusters)
         
         elif self.model=='length':
+            # Clust on cdr3 length
             print('Clustering on cdr3 length')
             t0 =time.time()
             data2.loc[:,'cluster']=data2['cdr3.%s'%(self.chain)].map({cdr3: 0 if type(cdr3)==float else len(cdr3) for cdr3 in data2['cdr3.%s'%(self.chain)].values})
