@@ -15,9 +15,8 @@ This benchmarking exercise integrates software making use of both Pip and Conda 
 ## Set up environments
 
 ```
-conda env create -f clustox.yml
-conda activate clustox
-pip install -r requirements.txt
+conda env create -f clustox_conda.yml
+conda activate clustox_conda
 ```
 
 ## Install CoNGA package for access to tcrdist_cpp
