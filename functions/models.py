@@ -314,7 +314,6 @@ def run_random(df):
 
 def cluster_TCRDist_matrix(S, seqs, method,cpus=1,hyperparam=None):
     '''Cluster distance matrix from tcrdist
-        adapted from https://github.com/svalkiers/clusTCR
     :param S: Distance matrix from tcrdist3
     :type S: array
     :param seqs: input data

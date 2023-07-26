@@ -60,7 +60,7 @@ Input data should be formatted similarly to data/vdjdb.csv
 Plotting and statistical analyses can be found in results_publication/stats/stats_plots.Rmd
 CDR3 amino acid motif production can be accessed in make_motifs.py. This will require prior installation of MUSCLE
 https://www.drive5.com/muscle/manual/install.html
-
+NB: you may need to change the MUSCLE executable within make_motifs.py by uncommenting the relevant line (#30/#31)
 
 ## Acknowledgements
 

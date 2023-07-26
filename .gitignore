@@ -6,7 +6,11 @@ venv/**
 data/combined_deduplicated_clean_ags.csv
 conga/**
 results/**
-functions/gliph2/lib/**.txt
-functions/gliph2/lib/**.csv
-functions/GIANA/**.txt
-functions/ismart/lib/**.txt
+functions/GIANA/input.txt
+functions/GIANA/input_clustered.txt
+functions/gliph2/lib/metarepertoire.txt
+functions/gliph2/lib/metarepertoire_cluster.csv
+functions/gliph2/lib/metarepertoire_cluster.txt
+functions/gliph2/lib/metarepertoire_score.txt
+functions/ismart/lib/input.txt
+functions/ismart/lib/input_clustered_v3.txt
