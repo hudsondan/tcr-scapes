@@ -63,9 +63,10 @@ NB: you may need to change the MUSCLE executable within make_motifs.py by uncomm
 
 ## Acknowledgements
 
-Many of the model implementations in this framework have been adapted from https://github.com/svalkiers/clusTCR
+Many of the model implementations in this framework have been adapted from https://github.com/svalkiers/clusTCR.
+The package also makes of a C++ implementation of tcrdist from https://github.com/phbradley/conga.
 
 ## Help
 
-For issues with installation or running the package, please raise an issue on GitHub at https://github.com/hudsondan/ClustOx.git
+For feedback on model functionality, issues with installation or running the package, please raise an issue on GitHub at https://github.com/hudsondan/ClustOx.git
 For anything else, please contact dan.hudson@dtc.ox.ac.uk
