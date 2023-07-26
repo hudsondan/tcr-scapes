@@ -6,3 +6,7 @@ venv/**
 data/combined_deduplicated_clean_ags.csv
 conga/**
 results/**
+functions/gliph2/lib/**.txt
+functions/gliph2/lib/**.csv
+functions/GIANA/**.txt
+functions/ismart/lib/**.txt

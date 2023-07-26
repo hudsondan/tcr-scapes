@@ -45,11 +45,7 @@ get_time<-function(df){
   return(df)
 }
 
-# res<-read.csv('../results/Full_run_500/20230711_101631/total.csv')
-# res<-read.csv('../results/Downsampling/20230713_085037/total.csv')
-# res<-get_time(res)
-
-ds <-get_time(get_files('../results/Downsampling','total'))
+ds <-get_time(get_files('../Downsampling/','total'))
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 ```
@@ -217,7 +213,6 @@ performance(ds,'Performance: All chains\n')
 ```
 ```{r}
 
-
 score<-function(results, N){
   f1<-getscores(results,'f1.score',N)
   ret<-getscores(results,'retention',N)
@@ -228,7 +223,7 @@ score<-function(results, N){
 
 
 t<-score(ds,25)
-write.csv(t,paste('../results/Tables/all_chains.csv'))
+write.csv(t,paste('../Tables/all_chains.csv'))
 t
 ```
 
@@ -239,7 +234,7 @@ performance(alpha,'Performance: Alpha chains\n')
 ```
 ```{r}
 t<-score(alpha,25)
-write.csv(t,paste('../results/Tables/alpha.csv'))
+write.csv(t,paste('../Tables/alpha.csv'))
 t
 ```
 
@@ -251,7 +246,7 @@ performance(beta,'Performance: Beta chains\n')
 ```
 ```{r}
 t<-score(beta,25)
-write.csv(t,paste('../results/Tables/beta.csv'))
+write.csv(t,paste('../Tables/beta.csv'))
 t
 ```
 
@@ -282,9 +277,7 @@ plot_box_epitope<-function(df,yvar,title){
   return(p)
 }
 
-
-library(plyr)
-results_eps <-get_time(get_files('../results/Downsampling','eps'))
+results_eps <-get_time(get_files('../Downsampling/','eps'))
 results_eps<-subset(results_eps, results_eps$Downsample==500)
 f1<-plot_box_epitope(results_eps,'f1.score','F1-score\n')
 f1
@@ -326,7 +319,7 @@ score_eps<-function(results, var, N){
 
 t<-score_eps(results_eps,'epitope',25)
 t
-write.csv(t,'../results/Tables/epitopes.csv')
+write.csv(t,'../Tables/epitopes.csv')
 ```
 
 
@@ -381,20 +374,18 @@ plot_Ncorr(ds)
 ```
 ```{r}
 detach(package:plyr)
-mcpas<-get_files('../results/McPas','total')
+mcpas<-get_files('../McPas/','total')
 performance(mcpas,'Performance: McPas\n')
 ```
 
 
 ```{r}
 t<-score(mcpas,5)
-write.csv(t,'../results/Tables/mcpas.csv')
+write.csv(t,'../Tables/mcpas.csv')
+t
 ```
 
 ```{r}
-
-
-
 plot_runtime<-function(df,var,hide_legend=FALSE){
   s1=14
   s2=10
@@ -432,15 +423,16 @@ plot_runtime<-function(df,var,hide_legend=FALSE){
 }
 
 # detach(package:plyr)
-olga<-get_files('../results/OLGA','total')
-olga<-get_time(olga)
-unique(olga$N_olga)
+olga<-get_time(get_files('../OLGA/','total'))
 plot_runtime(olga,'N_olga')
 
 ```
 
 
 ```{r}
+
+# Plot proportion of tcrdist runtime attributable to tcrdist vs. clustering
+
 tcrdist<-subset(olga,olga$Model=='tcrdist3')
 t<-lapply(str_split(trimws(gsub("[^0-9.]",' ',tcrdist$Runtime)),' '),as.double)
 ttime<-as.double(lapply(lapply(t,str_rep),'[[',1))
@@ -455,11 +447,7 @@ s1<-14
 td %>%
   ggplot(aes(x=N_olga,y=value,fill=variable))+
   geom_bar(stat='identity',position='stack',colour='black')+
-  # scale_colour_manual(values=cbPalette)+
-  # geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
-  #               position=position_dodge(.9))+
   labs(x='\nN_Olga',y='Runtime (s)\n',fill=NULL)+
-  # scale_y_continuous(trans='log10')+
   theme_classic()+
   theme(legend.title=element_text(size=s1),
     legend.text=element_text(size=s1),
@@ -473,6 +461,7 @@ td %>%
 ```
 ```{r}
 
+# Plot runtimes as a function of N_cpus
 
 plot_cpus<-function(df){
   s1=14
@@ -485,8 +474,6 @@ plot_cpus<-function(df){
   p<-df %>%
     ggplot(aes(x=Model,y=time,fill=as.factor(CPUs)))+
     geom_bar(stat='identity',position='dodge')+
-    # geom_point(size=1)+
-    # geom_pointrange(aes(ymin=time-sd, ymax=time+sd), position=position_dodge(.9))+
     geom_errorbar(aes(ymin=low-sd, ymax=high+sd), width=.2,
                  position=position_dodge(.9))+
     scale_fill_manual(values=rev(paletteer_c("grDevices::Oslo", 4)))+
@@ -506,17 +493,19 @@ plot_cpus<-function(df){
 }
 
 detach(package:plyr)
-cp <- get_time(get_files('../results/CPUs','total'))
+cp <- get_time(get_files('../CPUs/','total'))
 plot_cpus(subset(cp,cp$N_olga==10000))
 
 ```
 
 ```{r}
+
+# Plot F1 score as a function of N_decoys
+
 plot_decoys<-function(df,yvar,title){
   s1<-12
   yvar<-ensym(yvar)
   df<-data_summary(df,yvar,c('epitope','Model','N_olga'))
-  # var<-ensym(var)
   df$low<-df$f1.score-df$sd
   df$high<-df$f1.score+df$sd
   p<-df %>%
@@ -524,9 +513,7 @@ plot_decoys<-function(df,yvar,title){
     geom_bar(stat='identity',position='dodge')+
     geom_errorbar(aes(ymin=low-sd, ymax=high+sd), width=.2,
                  position=position_dodge(.9))+
-    # geom_point(pch=21)+
     facet_wrap('Model',nrow=2)+
-    # facet_grid(rows=vars(epitope),cols = vars(N_olga),scales='free_y')+
     labs(x=NULL,y=NULL,title=title)+
     ylim(0,1)+
     theme_classic()+
@@ -542,8 +529,8 @@ plot_decoys<-function(df,yvar,title){
   return(p)
 }
 
-library(plyr)
-olga_eps <-get_time(get_files('../results/OLGA','eps'))
+# library(plyr)
+olga_eps <-get_time(get_files('../OLGA/','eps'))
 olga_eps<-subset(olga_eps, (olga_eps$N_olga%in%c(0,10000))&(olga_eps$epitope!='DECOY'))
 plot_decoys(olga_eps,'f1.score','F1-score\n')
 
@@ -551,6 +538,9 @@ plot_decoys(olga_eps,'f1.score','F1-score\n')
 
 
 ```{r}
+
+# Get tables for OLGA plots
+
 getscores_multi2<-function(df,metric, var1, var2, N){
   # Compute 95% confidence with student t statistic
   table<-df%>%
@@ -572,16 +562,20 @@ return(table)
   
 }
 
+detach(package:plyr)
 f1<-getscores_multi2(olga_eps,'f1.score','epitope','N_olga',5)
 ret<-getscores_multi2(olga_eps,'retention','epitope','N_olga',5)
 t<-merge(f1,ret)
 t<-t[order(t['Epitope',])]
-write.csv(t,'../results/Tables/olga.csv')
-
+write.csv(t,'../Tables/olga.csv')
+t
 ```
 
 ```{r}
-res_stats<-get_files('../results/Downsampling','stats')
+
+# Plot cluster purity distributions
+
+res_stats<-get_files('../Downsampling/','stats')
 res_stats$logN<-log10(res_stats$N)
 
 s1=10
@@ -611,15 +605,5 @@ res_b%>%
   scale_y_continuous(labels = percent,limits=c(0,1),breaks=c(0,0.5,1))
 ```
 
-```{r}
-res_b
-data_summary(res_b, 'purity_frequent',c('N','Model','most_frequent'))%>%
-  ggplot(aes(x=N,y=purity_frequent,fill=most_frequent))+
-  geom_density()+
-  # geom_histogram(stat='bin',alpha=0.5,position = position_dodge(width=2))+
-  # geom_bar(stat='identity',position = 'dodge')+
-  facet_wrap('Model')+
-  scale_x_continuous(trans='log10')
-```
 
 
