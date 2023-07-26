@@ -191,7 +191,7 @@ def run(input_data, argdict):
         sub=data[data['dataset']==dataset].copy()
 
         # Preprocess input_data
-        sub = generate_data(sub,
+        sub = preprocess(sub,
                             chain_selection=argdict['Chain_selection'],
                             n=minclusts,
                             paired = argdict['Paired'],

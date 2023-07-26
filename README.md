@@ -44,11 +44,16 @@ To run the benchmarking analysis with default parameters from within an acitvate
 ```
 python run.py
 ```
+To run the programme with a single model and save the outputs
 
-To amend the input data, or any other parameters, see the model help documentation
+```
+python run.py -m hamming -s True
+```
+To amend the input data, chain selection, models, or any other parameters, see the model help documentation
 ```
 python run.py --help
 ```
+Input data should be formatted similarly to data/vdjdb.csv
 
 ## Analyse
 
@@ -57,7 +62,11 @@ CDR3 amino acid motif production can be accessed in make_motifs.py. This will re
 https://www.drive5.com/muscle/manual/install.html
 
 
+## Acknowledgements
+
+Many of the model implementations in this framework have been adapted from https://github.com/svalkiers/clusTCR
+
 ## Help
 
 For issues with installation or running the package, please raise an issue on GitHub at https://github.com/hudsondan/ClustOx.git
-For anything else, contact dan.hudson@dtc.ox.ac.uk
+For anything else, please contact dan.hudson@dtc.ox.ac.uk
