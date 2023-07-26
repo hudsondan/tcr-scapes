@@ -1,4 +1,4 @@
-name: clustox
+name: clustox_conda
 channels:
   - svalkiers
   - conda-forge

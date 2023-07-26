@@ -10,14 +10,13 @@ To install this repository, first clone from Github:
 git clone https://github.com/hudsondan/ClustOx.git
 ```
 
-This benchmarking exercise integrates software making use of both Pip and Conda dependencies. To install, please create a new conda environment from the .yml file provided:
+To install, please create a new conda environment from the .yml file provided:
 
 ## Set up environments
 
 ```
-conda env create -f clustox.yml
-conda activate clustox
-pip install -r requirements.txt
+conda env create -f clustox_conda.yml
+conda activate clustox_conda
 ```
 
 ## Install CoNGA package for access to tcrdist_cpp
@@ -44,7 +43,7 @@ To run the benchmarking analysis with default parameters from within an acitvate
 ```
 python run.py
 ```
-To run the programme with a single model and save the outputs
+To run the programme with a single model and save the outputs, for example with a Hamming Distance model
 
 ```
 python run.py -m hamming -s True
@@ -53,7 +52,7 @@ To amend the input data, chain selection, models, or any other parameters, see t
 ```
 python run.py --help
 ```
-Input data should be formatted similarly to data/vdjdb.csv
+Input data should be formatted similarly to data/vdjdb.csv, the minimum requirements are cdr3, v and j gene codes (formatted as cdr.x, v.x, j.x where x= alpha or beta), pairing (alpha, beta or paired) and epitope columns
 
 ## Analyse
 
@@ -64,9 +63,10 @@ NB: you may need to change the MUSCLE executable within make_motifs.py by uncomm
 
 ## Acknowledgements
 
-Many of the model implementations in this framework have been adapted from https://github.com/svalkiers/clusTCR
+Many of the model implementations in this framework have been adapted from https://github.com/svalkiers/clusTCR.
+The package also makes of a C++ implementation of tcrdist from https://github.com/phbradley/conga.
 
 ## Help
 
-For issues with installation or running the package, please raise an issue on GitHub at https://github.com/hudsondan/ClustOx.git
+For feedback on model functionality, issues with installation or running the package, please raise an issue on GitHub at https://github.com/hudsondan/ClustOx.git
 For anything else, please contact dan.hudson@dtc.ox.ac.uk
