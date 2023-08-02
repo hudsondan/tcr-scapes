@@ -25,25 +25,28 @@ Assumes that the user has created and activated a conda virtual environment
 Please see https://github.com/phbradley/conga for more details
 
 ```
-pip install scanpy
-git clone https://github.com/phbradley/conga.git && cd conga/tcrdist_cpp && make
+pip install scanpy louvain
+git clone https://github.com/phbradley/conga.git && cd conga/tcrdist_cpp && make && cd ..
 pip install -e .
 conda install seaborn scikit-learn statsmodels numba pytables
 conda install -c conda-forge python-igraph leidenalg louvain notebook
 conda install -c intel tbb # optional
-pip install scanpy
 pip install fastcluster # optional
 conda install pyyaml #optional for using yaml-formatted configuration files for scripts
+cd ..
 ```
+
+This system has been tested on macOS Monterey and linux-arm64
 
 ## Run
 
 To run the benchmarking analysis with default parameters from within an acitvated environment
+and save the outputs to a timestamped file in the results folder
 
 ```
 python run.py
 ```
-To run the programme with a single model and save the outputs, for example with a Hamming Distance model
+To run the programme with a single model , for example with a Hamming Distance model
 
 ```
 python run.py -m hamming -s True
