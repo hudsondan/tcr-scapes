@@ -431,6 +431,7 @@ def run_tcrdist3(df, chain_selection, cpus, method = 'DBSCAN', radius=50, hyper=
     
     # Compute tcrdist distances using sparse rect distances
     tr.cpus = cpus
+    # tr.compute_sparse_rect_distances(radius=radius, chunk_size=50)
     tr.compute_sparse_rect_distances(radius=radius, chunk_size=500)
     if chain_selection == 'alpha':
         S = tr.rw_alpha

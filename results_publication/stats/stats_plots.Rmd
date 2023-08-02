@@ -186,7 +186,6 @@ getscores<-function(df,metric, N){
                     )
   table$se<-table$sd/sqrt(N)
   t<-qt(p=0.05/2, df=N-1,lower.tail=F)
-  table$err<-table$se*t
   table$metric<-paste(round(table$mean,2),' ± ',round(table$err,2), sep='')
   table<-table[order(table[,'mean'], decreasing=TRUE ),]
   table<-select(table,c('Model',metric))
@@ -403,7 +402,7 @@ plot_runtime<-function(df,var,hide_legend=FALSE){
     geom_errorbar(aes(ymin=low, ymax=high))+
     scale_colour_manual(values=cbPalette,
                         breaks= c('clustcr','gliph2','GIANA','ismart','tcrdist3','hamming','length','random'))+
-    labs(x='# Decoy sequences (1000s)',y='Runtime (s)\n',fill=NULL)+
+    labs(x='\n# Synthetic TCRs (1000s)',y='Runtime (s)\n',fill=NULL)+
     scale_y_continuous(trans='log10', breaks = c(0.01,1,100),labels=c('0.01','1','100'))+
     scale_x_continuous(labels = function(x) x/1000)+
     theme_classic()+
@@ -517,7 +516,7 @@ plot_decoys<-function(df,yvar,title){
     labs(x=NULL,y=NULL,title=title)+
     ylim(0,1)+
     theme_classic()+
-    guides(fill=guide_legend(title='N_Olga',ncol=1))+
+    guides(fill=guide_legend(title='# Synthetic TCRs',ncol=1))+
     scale_y_continuous(labels = percent,limits=c(0,1),breaks=c(0,0.5,1))+
     scale_fill_manual(values=c('#A4B8DDFF','#0E2037FF'))+
     theme(plot.title=element_text(size=s1,hjust=0.5),
