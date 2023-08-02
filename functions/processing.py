@@ -104,32 +104,13 @@ def preprocess(data, chain_selection, n=0, paired=None, tcrd_sub=None):
     # Retain only instances with epitope linkage
     df=data[data['epitope']!='None']
     
-    # Retain instances with length > 5 (tcrdist c++ requirement)
-    df=df[(df['length_alpha']>5)&(df['length_beta']>5)]    
+    # Retain instances with length > 5 
+    for col in ['alpha','beta']:
+        if 'cdr3.%s'%(col) in df.columns:
+            if 'length_%s'%(col) not in df.columns:
+                df['length_%s'%(col)]=df['cdr3.%s'%(col)].apply(lambda x: 0 if type(x) in [float,np.float64] else len(x))
+    # df=df[(df['length_alpha']>5)&(df['length_beta']>5)]    
     df = strip_oovs(df,chain_selection) # Remove out of vocab values
-
-    cols = [x for x in ['cdr3.alpha',
-                        'v.alpha',
-                        'j.alpha',
-                        'v.alpha_clean_level_3',
-                        'j.alpha_clean_level_3',
-                        'cdr3.beta',
-                        'v.beta',
-                        'j.beta',
-                        'v.beta_clean_level_3',
-                        'j.beta_clean_level_3',
-                        'subject',
-                        'epitope',
-                        'pairing',
-                        'dataset'] if x in df.columns]
-    df=df[cols]
-    for c in ['v.alpha',
-              'j.alpha',
-              'v.beta',
-              'j.beta']:
-        if (c in cols) & (c+'_clean_level_3' in cols):
-            df=df.drop(labels=c,axis='columns')
-            df=df.rename(columns={c+'_clean_level_3':c})
 
     # Filter for missing values and (optionally) IMGT gene codes
     df = prepare(df,

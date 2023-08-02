@@ -178,6 +178,7 @@ def run(input_data, argdict):
     
     # Drop duplicates on CDR3A-TRAV-TRAJ-CDR3B-TRBV-TRBJ bioidentities
     if argdict['Deduplicate']:
+
         data=input_data.drop_duplicates(subset=['cdr3.alpha',
                                          'v.alpha',
                                          'j.alpha',

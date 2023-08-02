@@ -30,9 +30,6 @@ git clone https://github.com/phbradley/conga.git && cd conga/tcrdist_cpp && make
 pip install -e .
 conda install seaborn scikit-learn statsmodels numba pytables
 conda install -c conda-forge python-igraph leidenalg louvain notebook
-conda install -c intel tbb # optional
-pip install fastcluster # optional
-conda install pyyaml #optional for using yaml-formatted configuration files for scripts
 cd ..
 ```
 
@@ -46,7 +43,7 @@ and save the outputs to a timestamped file in the results folder
 ```
 python run.py
 ```
-To run the programme with a single model , for example with a Hamming Distance model
+To run the programme with a single model , for example with a Hamming distance model
 
 ```
 python run.py -m hamming -s True
@@ -60,6 +57,7 @@ Input data should be formatted similarly to data/vdjdb.csv, the minimum requirem
 ## Analyse
 
 Plotting and statistical analyses can be found in results_publication/stats/stats_plots.Rmd
+This file references the results produced for the accompanying publication, which can be found in results/publication
 CDR3 amino acid motif production can be accessed in make_motifs.py. This will require prior installation of MUSCLE
 https://www.drive5.com/muscle/manual/install.html
 NB: you may need to change the MUSCLE executable within make_motifs.py by uncommenting the relevant line (#30/#31)
