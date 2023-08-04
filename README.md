@@ -1,4 +1,4 @@
-# ClustOx: Benchmarking Unsupervised Clustering Models for inference of T Cell Receptor Specificity
+# TCR_SCAPES: Sequence Clustering Algorithms for Prediction of TCR Epitope Specificity
 
 A python repository to accompany {publication pending}
 
@@ -7,7 +7,7 @@ A python repository to accompany {publication pending}
 To install this repository, first clone from Github:
 
 ```
-git clone https://github.com/hudsondan/ClustOx.git
+git clone https://github.com/hudsondan/tcr-scapes.git
 ```
 
 To install, please create a new conda environment from the .yml file provided:
