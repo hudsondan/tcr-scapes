@@ -1,4 +1,4 @@
-# TCR_SCAPES: Sequence Clustering Algorithms for Prediction of TCR Epitope Specificity
+# TCR-SCAPES: Sequence Clustering Algorithms for Prediction of TCR Epitope Specificity
 
 A python repository to accompany {publication pending}
 
