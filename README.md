@@ -1,6 +1,8 @@
 # TCR-SCAPES: Sequence Clustering Algorithms for Prediction of TCR Epitope Specificity
 
-A python repository to accompany {publication pending}
+A python repository to accompany:
+
+Hudson, D., Lubbock, A., Basham, M. and Koohy, H., "A comparison of clustering models for inference of T cell receptor antigen specificity", preprint on BioArxiv (2023). Available at https://doi.org/10.1101/2023.08.04.551940. 
 
 ## Installation
 
