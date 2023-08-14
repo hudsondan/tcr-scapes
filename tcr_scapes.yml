@@ -1,4 +1,4 @@
-name: clustox_conda
+name: tcr_scapes
 channels:
   - svalkiers
   - conda-forge
@@ -138,4 +138,4 @@ dependencies:
       - umap-learn==0.5.3
       - weblogo==3.7.12
       - zipdist==0.1.5
-prefix: /opt/miniconda3/envs/clustox_conda
+prefix: /opt/miniconda3/envs/tcr_scapes
