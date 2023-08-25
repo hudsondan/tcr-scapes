@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 from sklearn.metrics import precision_recall_fscore_support, classification_report, adjusted_mutual_info_score, balanced_accuracy_score
+from scipy.stats import hmean
+from sklearn.metrics import multilabel_confusion_matrix
+
 
 def get_purity(df):
     '''Compute cluster purity
@@ -43,7 +46,74 @@ def get_purity(df):
             'N': N,
             'Nd': Nd}
 
-def get_clustermetrics(df):
+def precision_recall_fscore_include_uncalled(df, ytrue, ypred, dryrun=False, debug=False):
+    """
+    Just adding None to ypred and a dummy value to ytrue is not supported
+    We could derive fp, tp etc from ypred and ytrue manually through comparison,
+    but below we derive it from multilabel_confusion_matrix and also need
+    to implement average='weighted'
+    """
+
+    if dryrun:
+        print("DRYRUN: not actually adding missing FNs. Values should be identical with original. Only useful for debugging")
+
+    labels = np.unique(ytrue)
+    precisions = []# per epitope
+    recalls = []# per epitope
+    weights = []# per epitope
+    fn_per_epi = df[df['cluster'].isnull()]['epitope'].value_counts()# previously ignored FNs
+    for (i, cm) in enumerate(multilabel_confusion_matrix(ytrue, ypred, labels=labels)):# per epitope
+        # for order see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.multilabel_confusion_matrix.html
+        tn = cm[0][0]
+        fn = cm[1][0]
+        tp = cm[1][1]
+        fp = cm[0][1]
+        lbl = labels[i]
+
+        if not dryrun:
+            missing_fn = fn_per_epi.get(lbl, 0)# for random there likely won't be any missing
+            fn += missing_fn
+            if debug:
+                print(f"DEBUG {lbl} Adding {missing_fn} to fn")
+                print(f"DEBUG {lbl} tp={tp} fp={fp} fn={fn} tn={tn}")
+
+        if tp+fp == 0:
+            precision = 0.0
+        else:
+            precision = tp/(tp+fp)
+
+        if tp+fn == 0:
+            recall = 0.0
+        else:
+            recall = tp/(tp+fn)
+
+        # weighting='average'
+        support = sum(ytrue == lbl)
+        w = support/ytrue.shape[0]
+        weights.append(w)
+        precision *= w
+        recall *= w
+        #if debug:
+        #    print(f"{lbl} after weighting precision={precision} recall={recall}")
+
+        precisions.append(precision)
+        recalls.append(recall)
+
+    # deal with epitopes for which we had no prediction whatsoever
+    uncalled_epis = set(df['epitope']).difference(labels)
+    for i in uncalled_epis:
+        if not dryrun:
+            recalls.append(0)
+            precisions.append(0)
+
+    recall = sum(recalls)
+    precision = sum(precisions)
+    fscore = sum(hmean([recalls,precisions]))
+
+    return precision, recall, fscore
+
+
+def get_clustermetrics(df, include_uncalled=True, debug_uncalled=True):
     '''Compute cluster metrics
     :param df: input data
     :type df: pandas DataFrame
@@ -54,14 +124,11 @@ def get_clustermetrics(df):
     sub = df[~df['cluster'].isnull()]
 
     # Compute overall purity metrics
-    stats= get_purity(sub)
+    stats = get_purity(sub)
 
     # Compute predictive metrics
     ypred = sub['cluster'].map(stats['most_frequent'])
     ytrue = sub['epitope']
-
-    # ypred = pd.concat([ypred, pd.Series("", index=range(sum(df['cluster'].isnull())))]).reset_index(drop=True)
-    # ytrue = pd.concat([ytrue, pd.Series(ytrue.iloc[0], index=range(sum(df['cluster'].isnull())))]).reset_index(drop=True)
 
     try:
         accuracy = balanced_accuracy_score(ytrue,ypred,adjusted=True)
@@ -71,6 +138,27 @@ def get_clustermetrics(df):
     precision, recall, f1score, support = precision_recall_fscore_support(ytrue, ypred, average='weighted', zero_division=0) # Total scores
     ami = adjusted_mutual_info_score(ytrue,ypred)
     rep = classification_report(ytrue, ypred, output_dict=True, zero_division=0) # Scores per epitope
+
+    # FN are ignored above (all input TCRs are callable)!
+    if include_uncalled:
+        dryrun = False 
+        if debug_uncalled:
+            print(f"ORIGINAL recall={recall} precision={precision} f1score={f1score}")
+        precision, recall, f1score = precision_recall_fscore_include_uncalled(
+                df, ytrue, ypred, dryrun=dryrun, debug=debug_uncalled)
+
+        # invalidate other values based on ytrue and ypred FIXME 
+        accuracy = np.nan
+        support = np.nan
+        ami = np.nan
+        for k in rep:
+            if isinstance(rep[k], dict):
+                for m in rep[k]:
+                    rep[k][m] = np.nan
+            else:
+                rep[k] = np.nan
+        if debug_uncalled:
+            print(f"FIXED recall={recall} precision={precision} f1score={f1score}")
 
     # Compute epitope-specific metrics
     counts = {k:v for k,v in sub['epitope'].value_counts().reset_index().values.tolist()}
