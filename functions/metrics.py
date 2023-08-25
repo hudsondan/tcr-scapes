@@ -59,6 +59,10 @@ def get_clustermetrics(df):
     # Compute predictive metrics
     ypred = sub['cluster'].map(stats['most_frequent'])
     ytrue = sub['epitope']
+
+    # ypred = pd.concat([ypred, pd.Series("", index=range(sum(df['cluster'].isnull())))]).reset_index(drop=True)
+    # ytrue = pd.concat([ytrue, pd.Series(ytrue.iloc[0], index=range(sum(df['cluster'].isnull())))]).reset_index(drop=True)
+
     try:
         accuracy = balanced_accuracy_score(ytrue,ypred,adjusted=True)
     except ZeroDivisionError:

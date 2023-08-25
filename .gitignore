@@ -6,6 +6,8 @@ venv/**
 data/combined_deduplicated_clean_ags.csv
 conga/**
 results/**
+results_publication/**
+.RHistory
 functions/GIANA/input.txt
 functions/GIANA/input_clustered.txt
 functions/gliph2/lib/metarepertoire.txt
