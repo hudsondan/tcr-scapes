@@ -17,7 +17,7 @@ To install, please create a new conda environment from the .yml file provided:
 ## Set up environments
 
 ```
-conda env create -f clustox_conda.yml
+conda env create -f tcr_scapes.yml
 conda activate clustox_conda
 ```
 
