@@ -17,8 +17,8 @@ To install, please create a new conda environment from the .yml file provided:
 ## Set up environments
 
 ```
-conda env create -f clustox_conda.yml
-conda activate clustox_conda
+conda env create -f tcr_scapes.yml
+conda activate tcr_scapes
 ```
 
 ## Install CoNGA package for access to tcrdist_cpp
