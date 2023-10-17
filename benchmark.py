@@ -20,7 +20,7 @@ class Benchmark:
         
     def baseline(self, data, 
                 clusterscores, 
-                epscores, 
+                # epscores, 
                 statistics):
         '''Establish a random baseline for comparison of model performance
                 :param data: source data
@@ -38,22 +38,22 @@ class Benchmark:
         self.argdict['Model'] = 'random'     
         self.argdict['Runtime'] =randtime
         self.argdict['N_clusters']= len(data['cluster'].dropna().unique())  # Retain only clustered instances
-        c_scores, e_scores, stats = score(data,self.argdict)    # Get scores
-        
+        c_scores, stats = score(data,self.argdict)    # Get scores
+        # c_scores, e_scores, stats = score(data,self.argdict)    # Get scores
         # Add scores to output DataFrames
         clusterscores=pd.concat([clusterscores,c_scores])   
-        epscores=pd.concat([epscores,e_scores])
+        # epscores=pd.concat([epscores,e_scores])
         statistics=pd.concat([statistics,stats])
         
         if self.save:
             # Record cluster output
             data.to_csv('results/%s/%s_%s.csv'%(self.datetime,'random',self.chain))
 
-        return clusterscores, epscores, statistics
+        return clusterscores, statistics
     
     def getscore(self, data,
                     clusterscores,
-                    epscores,
+                    # epscores,
                     statistics):
         
         '''Return evaluation of cluster and predictive metrics for a given model
@@ -150,17 +150,18 @@ class Benchmark:
         # Record performance for model selected
         self.argdict['Runtime'] =t
         self.argdict['N_clusters']= len(data2['cluster'].dropna().unique())
-        c_scores, e_scores, stats = score(data2, self.argdict)
+        c_scores, stats = score(data2, self.argdict)
+        # c_scores, e_scores, stats = score(data2, self.argdict)
         clusterscores=pd.concat([clusterscores,c_scores])
-        epscores=pd.concat([epscores,e_scores])
-        statistics=pd.concat([statistics,stats])
+        # epscores=pd.concat([epscores,e_scores])
+        statistics=pd.concat([statistics, stats])
         
         # Generate random baseline results from same dataset
-        clusterscores, epscores, statistics = self.baseline(data.copy(),
+        clusterscores, statistics = self.baseline(data.copy(),
                                                             clusterscores,
-                                                            epscores,
+                                                            # epscores,
                                                             statistics)
-        return clusterscores, epscores, statistics
+        return clusterscores, statistics
 
 
 def run(input_data, argdict):
@@ -230,9 +231,8 @@ def run(input_data, argdict):
                     benchmark = Benchmark(argdict) # Initialise
     
                     # Run benchmarking for models in the input selection
-                    c, e, s = benchmark.getscore(df3,
+                    c, s = benchmark.getscore(df3,
                                         c,
-                                        e,
                                         s)
     # Initialise results folder
     if not datetime in os.listdir('results'):
@@ -240,6 +240,6 @@ def run(input_data, argdict):
 
     # Save outputs
     c.to_csv('results/%s/total.csv'%(datetime)) # Total performance values
-    e.to_csv('results/%s/eps.csv'%(datetime))   # Per epitope performance
+    # e.to_csv('results/%s/eps.csv'%(datetime))   # Per epitope performance
     s.to_csv('results/%s/stats.csv'%(datetime)) # Cluster statistics
 
