@@ -39,10 +39,8 @@ class Benchmark:
         self.argdict['Runtime'] =randtime
         self.argdict['N_clusters']= len(data['cluster'].dropna().unique())  # Retain only clustered instances
         c_scores, stats = score(data,self.argdict)    # Get scores
-        # c_scores, e_scores, stats = score(data,self.argdict)    # Get scores
         # Add scores to output DataFrames
         clusterscores=pd.concat([clusterscores,c_scores])   
-        # epscores=pd.concat([epscores,e_scores])
         statistics=pd.concat([statistics,stats])
         
         if self.save:
@@ -151,9 +149,7 @@ class Benchmark:
         self.argdict['Runtime'] =t
         self.argdict['N_clusters']= len(data2['cluster'].dropna().unique())
         c_scores, stats = score(data2, self.argdict)
-        # c_scores, e_scores, stats = score(data2, self.argdict)
         clusterscores=pd.concat([clusterscores,c_scores])
-        # epscores=pd.concat([epscores,e_scores])
         statistics=pd.concat([statistics, stats])
         
         # Generate random baseline results from same dataset
@@ -239,7 +235,6 @@ def run(input_data, argdict):
         os.mkdir('results/%s'%(datetime))
 
     # Save outputs
-    c.to_csv('results/%s/total.csv'%(datetime)) # Total performance values
-    # e.to_csv('results/%s/eps.csv'%(datetime))   # Per epitope performance
+    c.to_csv('results/%s/total.csv'%(datetime)) # Performance values
     s.to_csv('results/%s/stats.csv'%(datetime)) # Cluster statistics
 
