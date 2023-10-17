@@ -60,7 +60,10 @@ def precision_recall_fscore_include_uncalled(df, ytrue, ypred, dryrun=False, deb
     labels = np.unique(ytrue)
     precisions = []# per epitope
     recalls = []# per epitope
+    accuracies = [] # per epitope
     weights = []# per epitope
+    supports = []
+
     fn_per_epi = df[df['cluster'].isnull()]['epitope'].value_counts()# previously ignored FNs
     for (i, cm) in enumerate(multilabel_confusion_matrix(ytrue, ypred, labels=labels)):# per epitope
         # for order see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.multilabel_confusion_matrix.html
@@ -86,31 +89,46 @@ def precision_recall_fscore_include_uncalled(df, ytrue, ypred, dryrun=False, deb
             recall = 0.0
         else:
             recall = tp/(tp+fn)
+        
+        if tp + tn == 0:
+            accuracy = 0
+        else:
+            accuracy = (tp + tn ) / (tp + tn + fp + fn)
+
 
         # weighting='average'
         support = sum(ytrue == lbl)
         w = support/ytrue.shape[0]
         weights.append(w)
+        
         precision *= w
         recall *= w
+        accuracy *=w
+
         #if debug:
         #    print(f"{lbl} after weighting precision={precision} recall={recall}")
-
+        accuracies.append(accuracy)
         precisions.append(precision)
         recalls.append(recall)
+        supports.append(support)
 
     # deal with epitopes for which we had no prediction whatsoever
     uncalled_epis = set(df['epitope']).difference(labels)
+    print(uncalled_epis)
     for i in uncalled_epis:
         if not dryrun:
             recalls.append(0)
             precisions.append(0)
+            supports.append(sum(ytrue == i))
 
     recall = sum(recalls)
     precision = sum(precisions)
-    fscore = sum(hmean([recalls,precisions]))
+    support = sum(supports)
+    # fscore = sum(hmean([recalls,precisions]))
+    fscore = 2* (precision * recall) / (precision + recall)
 
-    return precision, recall, fscore
+
+    return accuracy, precision, recall, fscore, support
 
 
 def get_clustermetrics(df, include_uncalled=True, debug_uncalled=True):
@@ -130,33 +148,34 @@ def get_clustermetrics(df, include_uncalled=True, debug_uncalled=True):
     ypred = sub['cluster'].map(stats['most_frequent'])
     ytrue = sub['epitope']
 
-    try:
-        accuracy = balanced_accuracy_score(ytrue,ypred,adjusted=True)
-    except ZeroDivisionError:
-        print('Classification failed, zero classes')
-        accuracy = 0
+    # try:
+    #     accuracy = balanced_accuracy_score(ytrue,ypred,adjusted=True)
+    # except ZeroDivisionError:
+    #     print('Classification failed, zero classes')
+    #     accuracy = 0
     precision, recall, f1score, support = precision_recall_fscore_support(ytrue, ypred, average='weighted', zero_division=0) # Total scores
     ami = adjusted_mutual_info_score(ytrue,ypred)
     rep = classification_report(ytrue, ypred, output_dict=True, zero_division=0) # Scores per epitope
 
     # FN are ignored above (all input TCRs are callable)!
     if include_uncalled:
+        print('FN debugging')
         dryrun = False 
         if debug_uncalled:
             print(f"ORIGINAL recall={recall} precision={precision} f1score={f1score}")
-        precision, recall, f1score = precision_recall_fscore_include_uncalled(
+        accuracy, precision, recall, f1score, support = precision_recall_fscore_include_uncalled(
                 df, ytrue, ypred, dryrun=dryrun, debug=debug_uncalled)
 
         # invalidate other values based on ytrue and ypred FIXME 
-        accuracy = np.nan
-        support = np.nan
-        ami = np.nan
-        for k in rep:
-            if isinstance(rep[k], dict):
-                for m in rep[k]:
-                    rep[k][m] = np.nan
-            else:
-                rep[k] = np.nan
+        # accuracy = np.nan
+        # support = np.nan
+        ami = adjusted_mutual_info_score(ytrue,ypred)
+        # for k in rep:
+        #     if isinstance(rep[k], dict):
+        #         for m in rep[k]:
+        #             rep[k][m] = np.nan
+        #     else:
+        #         rep[k] = np.nan
         if debug_uncalled:
             print(f"FIXED recall={recall} precision={precision} f1score={f1score}")
 
@@ -198,7 +217,8 @@ def score(df, header):
     :return: all scores, epitope-specific scores and cluster statistics
     :rtype: Pandas DataFrame'''
 
-    clusterscores, epscores, clusterstats = get_clustermetrics(df)  # Compute scores
+    # clusterscores, epscores, clusterstats = get_clustermetrics(df)  # Compute scores
+    clusterscores, epscores, clusterstats = get_clustermetrics(df, True, True)  # Compute scores FN debug
     
     # Prepare dataframes
     c_scores, e_scores = [pd.DataFrame.from_dict(d,orient='index').T for d in [clusterscores, epscores]] 
