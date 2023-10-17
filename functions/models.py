@@ -312,6 +312,19 @@ def run_random(df):
 
     return df, t1-t0
 
+def run_vcluster(df, pairing):
+
+    t0 = time.time()
+    mapper = {v:i for i,v in enumerate(df['v.%s'%(pairing)].unique())}
+    df['cluster']=df['v.%s'%(pairing)].map(mapper)
+    t1 = time.time()
+
+    return df, t1-t0
+
+
+
+
+
 def cluster_TCRDist_matrix(S, seqs, method,cpus=1,hyperparam=None):
     '''Cluster distance matrix from tcrdist
     :param S: Distance matrix from tcrdist3

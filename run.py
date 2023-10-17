@@ -13,20 +13,22 @@ def parse(args):
 
     if args.model_selection not in ['fast',
                                     'all',
-                                    'tcrdists',
-                                    'length',
+
                                     'clustcr',
                                     'hamming',
                                     'GIANA',
                                     'gliph2',
                                     'ismart',
+                                    'length',
                                     'tcrdist',
                                     'tcrdist3',
+                                    'vcluster',
                                     ]:
-        raise AssertionError('Choose a model selection from "all","tcrdists","length","clustcr","hamming","GIANA","gliph2","ismart","tcrdist","tcrdist3"')
+        raise AssertionError('Choose a model selection from "all","fast","clustcr","hamming","GIANA","gliph2","ismart","tcrdist","tcrdist3", "vcluster')
         
     elif args.model_selection=='all':
         model_selection = ['length',
+                           'vcluster',
                             'clustcr',
                             'hamming',
                             'GIANA',

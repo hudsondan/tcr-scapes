@@ -118,6 +118,7 @@ def precision_recall_fscore(df, ytrue, ypred):
 
         accuracy = 0
         precision = 0
+        recall = 0
         fscore = 0
         support = sum(ytrue == i)
         recalls.append(recall)
@@ -133,7 +134,10 @@ def precision_recall_fscore(df, ytrue, ypred):
     recall = sum(recalls)
     precision = sum(precisions)
     support = sum(supports)
-    fscore = 2* (precision * recall) / (precision + recall)
+    try:
+        fscore = 2* (precision * recall) / (precision + recall)
+    except ZeroDivisionError:
+        fscore = np.nan
 
     return accuracy, precision, recall, fscore, support, epmetrics
 
