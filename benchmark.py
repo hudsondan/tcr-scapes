@@ -1,7 +1,7 @@
 import pandas as pd
 import os, time
 from functions.processing import *
-from functions.models import run_clustcr, run_hamming,  run_GIANA, run_gliph2, run_ismart, run_random, run_tcrdist3, run_tcrdistcpp
+from functions.models import run_clustcr, run_hamming,  run_GIANA, run_gliph2, run_ismart, run_random, run_tcrdist3, run_tcrdistcpp, run_vcluster
 from functions.metrics import *
 
 class Benchmark:
@@ -136,7 +136,10 @@ class Benchmark:
                                     radius=self.argdict['tcrdist_Radius'],
                                     hyper=self.argdict['tcrdist_Hyper'],
                                     )
-            
+        elif self.model=='vcluster':
+            data2, t  = run_vcluster(data2, self.chain)
+
+
         # Drop singlets
         cnts = [l for l,n in data2['cluster'].value_counts().reset_index()[['cluster','count']].values.tolist() if n<=1]
         data2.loc[:,'cluster']=data2.loc[:,'cluster'].replace(cnts,np.nan)
