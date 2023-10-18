@@ -13,6 +13,9 @@ from clustcr import Clustering
 from functions.tcrdist_cpp import *
 # from functions.tcrdist_cpp import cluster_TCRDist_matrix_cpp
 
+from tcrdist.rep_funcs import  compute_pw_sparse_out_of_memory2
+# from tcrdist.rep_funcs import  compute_n_tally_out_of_memory2
+
 def run_clustcr(df, chain_selection,cpus):
     '''Run ClusTCR clustering algorithm
     :param df: input data
@@ -363,7 +366,7 @@ def cluster_TCRDist_matrix(S, seqs, method,cpus=1,hyperparam=None):
 
     return {seq: label for seq, label in zip(seqs['bio'].values,labels) if label!=-1}
 
-def run_tcrdist3(df, chain_selection, cpus, method = 'DBSCAN', radius=50, hyper=None):
+def run_tcrdist3(df, chain_selection, cpus, method = 'DBSCAN', radius=50, hyper=None, chunk=True):
     '''Run tcrdist3 clustering algorithm
     :param df: input data
     :type df: Pandas DataFrame
@@ -443,14 +446,33 @@ def run_tcrdist3(df, chain_selection, cpus, method = 'DBSCAN', radius=50, hyper=
                 compute_distances=False)    # Compute distances
     
     # Compute tcrdist distances using sparse rect distances
+
+
     tr.cpus = cpus
-    tr.compute_sparse_rect_distances(radius=radius, chunk_size=500)
-    if chain_selection == 'alpha':
-        S = tr.rw_alpha
-    elif chain_selection == 'beta':
-        S = tr.rw_beta
+
+    if chunk:
+        if chain ==['alpha']:
+            name = 'alpha'
+        else:
+            name = 'beta'
+
+        S, _ = compute_pw_sparse_out_of_memory2(tr = tr,
+            row_size      = 50,
+            pm_processes  = cpus,
+            pm_pbar       = True,
+            max_distance  = radius,
+            reassemble    = True,
+            cleanup       = True,
+            assign        = True)
+        S=S[name]
     else:
-        S = tr.rw_beta
+        tr.compute_sparse_rect_distances(radius=radius, chunk_size=500)
+        if chain_selection == 'alpha':
+            S = tr.rw_alpha
+        elif chain_selection == 'beta':
+            S = tr.rw_beta
+        else:
+            S = tr.rw_beta
 
     # Convert columns back to input
     namedict = {cdr3a:'cdr3.alpha',
