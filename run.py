@@ -101,9 +101,9 @@ if __name__=='__main__':
                         help='Choose tcrdist3 metaclonotype radius')
     parser.add_argument('-tcdh', '--tcrdist_hyper', required=False, type=float, default = 0.5,
                         help='Choose tcrdist3 clustering model hyperparameter (DBSCAN: n_eps, KMeans n_clusts)')
-    parser.add_argument('-tcds', '--tcrdist_subset', required=False, type=bool, default = True,
+    parser.add_argument('-tcds', '--tcrdist_subset', required=False, type=bool, default = None,
                         help='Select only TCRs with a corresponding gene in the tcrdist lookup')
-    parser.add_argument('-tcdc', '--tcrdist_chunk', required=False, type=bool, default = True,
+    parser.add_argument('-tcdc', '--tcrdist_chunk', required=False, type=bool, default = None,
                         help='Chunk tcrdist3 measurements to avoid OOM')
     parser.add_argument('-s', '--save', required=False, type=bool, default = None,
                         help='Save output clusters')

@@ -4,7 +4,7 @@
 #SBATCH --mem=30G
 #SBATCH --mail-user=dan.hudson@dtc.ox.ac.uk  # adjust this to match your email address
 #SBATCH --mail-type=ALL
-#SBATCH --output=/well/fernandes/projects/software/slurm/DH/%j.out
+#SBATCH --output=/well/fernandes/projects/software/slurm/DH/tcr_scapes/%j.out
 
 module purge
 module load Python/3.9.6-GCCcore-11.2.0
@@ -18,9 +18,9 @@ module list
 echo "Loaded modules and activated virtual environment"
 echo "Running"
 
-python run.py -m tcrdist3 -tcdc True -ds 1000 -ex "tcrdist OOM check" -no 10000
-python run.py -m tcrdist3 -ds 1000 -ex "tcrdist OOM check" -no 10000
-python run.py -m tcrdist3 -tcds  -ds 1000 -ex "tcrdist OOM check" -no 10000
+python run.py -r 5 -m tcrdist3 -tcdc True -tcds True -me 1000 -ds 1000 -ex "tcrdist OOM check" -no 10000
+python run.py -r 5 -m tcrdist3 -tcds True -me 1000 -ds 1000 -ex "tcrdist OOM check" -no 10000
+#python run.py -m tcrdist3  -me 1000 -ds 1000 -ex "tcrdist OOM check" -no 10000
 
 conda deactivate
 conda deactivate
