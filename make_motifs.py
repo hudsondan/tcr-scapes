@@ -56,6 +56,7 @@ if __name__=="__main__":
             'hamming',
             'ismart',
             'tcrdist3',
+            'vcluster',
             'length',
             'random'
             ]
@@ -65,6 +66,7 @@ if __name__=="__main__":
             'Hamming',
             'iSMART',
             'tcrdist3',
+            'vcluster',
             'Length',
             'Random']
     

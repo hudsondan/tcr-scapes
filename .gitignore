@@ -8,7 +8,10 @@ conga/**
 results/**
 results_publication/**
 results_publication2/**
+<<<<<<< HEAD
 *.sh
+=======
+>>>>>>> 95b95f563ec543f34dd4ce1755752f6374d7320b
 .RHistory
 functions/GIANA/input.txt
 functions/GIANA/input_clustered.txt
