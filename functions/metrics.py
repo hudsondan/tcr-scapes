@@ -205,6 +205,7 @@ def score(df, header):
     c_scores = pd.DataFrame.from_dict(clusterscores,orient='index').T
     head = pd.DataFrame.from_dict(header,orient='index').T
     stats  = pd.DataFrame.from_dict(clusterstats).reset_index().rename(columns={'index':'cluster'})
+    stats['Model']=[header['Model']]*len(stats)
     c_scores=pd.concat([head,c_scores],axis=1).reset_index()
 
     return c_scores, stats
