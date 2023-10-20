@@ -18,9 +18,10 @@ module list
 echo "Loaded modules and activated virtual environment"
 echo "Running"
 
-for no in 0 500 1000 5000 10000 50000 100000
+#for no in 0 500 1000 5000 10000 50000 100000
+for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 do
-	python run.py -no $no -r 5 -cs beta -tcds True -tcdc True -ds 1000 -me 1000 -ex "OLGA"
+	python run.py -no 100000 -r 1 -cs beta -tcds True -tcdc True -me 1000 -ex "OLGA"
 done
 conda deactivate
 conda deactivate
