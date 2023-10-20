@@ -7,6 +7,8 @@ data/combined_deduplicated_clean_ags.csv
 conga/**
 results/**
 results_publication/**
+results_publication2/**
+*.sh
 .RHistory
 functions/GIANA/input.txt
 functions/GIANA/input_clustered.txt
