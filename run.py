@@ -50,8 +50,8 @@ def parse(args):
        chain_selection = [args.chain_selection ]
     else:
         chain_selection=['alpha','beta']
-        
-    if args.paired in [None, 'None', False, 'False']:
+
+    if args.paired in [None, 'None', False, 'False', '']:
         paired = None
     else:
         paired = True
@@ -88,7 +88,7 @@ if __name__=='__main__':
                         help='Select chain selection from ["alpha","beta","both"]')
     parser.add_argument('-m', '--model_selection', required=False, type=str, default = 'all',
                         help='Select models from ["fast" (ClusTCR, GIANA, Hamming, Length, Random),"all" (ClusTCR, GIANA, GLIPH2, Hamming, iSMART, tcrdist3, Length, Random)]')
-    parser.add_argument('-p', '--paired', required=False, type=bool, default = True,
+    parser.add_argument('-p', '--paired', required=False, type=bool, default = None,
                         help='Select whether to retain only paired chain TCRs')
     parser.add_argument('-ds', '--dsample', required=False, type=int, default = 1000,
                         help='If minimum clusters enabled, downsample to N TCRs per epitope')
