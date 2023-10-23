@@ -51,10 +51,10 @@ def parse(args):
     else:
         chain_selection=['alpha','beta']
 
-    if args.paired in [None, 'None', False, 'False', '']:
-        paired = None
-    else:
-        paired = True
+    # if not args.paired:
+    #     paired = None
+    # else:
+    #     paired = True
     
     argdict  = {'Datetime': get_time(),
                 'Input':args.input,
@@ -67,7 +67,7 @@ def parse(args):
                 'Repeats':args.repeats,
                 'N_olga':args.n_olga,
                 'Min_clustsize': args.min_eps,
-                'Paired':paired,
+                'Paired':args.paired,
                 'tcrdist_Method':args.tcrdist_method,
                 'tcrdist_Radius':args.tcrdist_radius,
                 'tcrdist_Hyper': args.tcrdist_hyper,
