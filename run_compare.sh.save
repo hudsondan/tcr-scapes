@@ -18,15 +18,10 @@ module list
 echo "Loaded modules and activated virtual environment"
 echo "Running"
 
-for no in 0 500 1000 5000 10000
+for ds in 10 50 100 500 1000
 do
-	python run.py -no $no -r 20 -cs beta -tcds True -tcdc True -ds 1000 -me 1000 -ex "OLGA"
-done
-
-for i in 1 2 3 4 5 6 7 8 9 10 11 12 13
-do
-  	python run.py -no 50000 -r 1 -cs beta -tcds True -tcdc True -ds 1000 -me 1000 -ex "OLGA"
-	python run.py -no 100000 -r 1 -cs beta -tcds True -tcdc True -ds 1000 -me 1000 -ex "OLGA"
+	python run.py -r 25 -cs both -tcds True -tcdc True -ds $ds -me $ds -ex "Full benchmarking"
+#	python run.py -cs both -tcdc True -ds $ds -me $ds -ex "Full benchmarking - all values" 
 done
 conda deactivate
 conda deactivate

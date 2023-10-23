@@ -18,7 +18,7 @@ module list
 echo "Loaded modules and activated virtual environment"
 echo "Running"
 
-python run.py -i data/mcpas.csv -cs both
+python run.py -i data/mira.csv -cs beta -ds 1000 -me 1000 -ex "MIRA"
 
 conda deactivate
 module purge
