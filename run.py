@@ -50,11 +50,12 @@ def parse(args):
        chain_selection = [args.chain_selection ]
     else:
         chain_selection=['alpha','beta']
-    if args.paired in [False, 'False', None, 'None']:
-	pairing = None
-    else:
-	pairing = True
 
+    if args.paired in [None, 'None', False, 'False']:
+        paired = None
+    else:
+        paired = True
+    
     argdict  = {'Datetime': get_time(),
                 'Input':args.input,
                 'Experiment': args.expt,
@@ -66,7 +67,7 @@ def parse(args):
                 'Repeats':args.repeats,
                 'N_olga':args.n_olga,
                 'Min_clustsize': args.min_eps,
-                'Paired':pairing,
+                'Paired':paired,
                 'tcrdist_Method':args.tcrdist_method,
                 'tcrdist_Radius':args.tcrdist_radius,
                 'tcrdist_Hyper': args.tcrdist_hyper,
@@ -74,6 +75,7 @@ def parse(args):
                 'tcrdist_Chunk': args.tcrdist_chunk,
                 'Save':args.save,
                 }
+
     return argdict
     
 if __name__=='__main__':
@@ -89,7 +91,7 @@ if __name__=='__main__':
                         help='Select models from ["fast" (ClusTCR, GIANA, Hamming, Length, Random),"all" (ClusTCR, GIANA, GLIPH2, Hamming, iSMART, tcrdist3, Length, Random)]')
     parser.add_argument('-p', '--paired', required=False, type=bool, default = True,
                         help='Select whether to retain only paired chain TCRs')
-    parser.add_argument('-ds', '--dsample', required=False, type=int, default = 500,
+    parser.add_argument('-ds', '--dsample', required=False, type=int, default = 1000,
                         help='If minimum clusters enabled, downsample to N TCRs per epitope')
     parser.add_argument('-d', '--dedup', required=False, type=bool, default = True,
                         help='Remove duplicates on a single chain selection')
@@ -97,7 +99,7 @@ if __name__=='__main__':
                         help='Number of experimental repeats')
     parser.add_argument('-no', '--n_olga', required=False, type=int, default=0,
                         help='Number of randomly generated TCRs to spike in')
-    parser.add_argument('-me', '--min_eps', required=False, type=int, default = 500,
+    parser.add_argument('-me', '--min_eps', required=False, type=int, default = 1000,
                         help='Retain epitopes having a minimum number of representatives')
     parser.add_argument('-tcdm', '--tcrdist_method', required=False, type=str, default = 'DBSCAN',
                         help='Choose tcrdist3 clustering method from ["DBSCAN","KMeans"]')
