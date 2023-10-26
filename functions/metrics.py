@@ -107,7 +107,12 @@ def precision_recall_fscore(df, ytrue, ypred):
         epmetrics['accuracy'][labels[i]]= accuracy
         epmetrics['precision'][labels[i]]= precision
         epmetrics['recall'][labels[i]]= recall
-        epmetrics['f1-score'][labels[i]]= 2* (precision * recall) / (precision + recall)
+        if ((precision * recall ==0)|(precision + recall ==0)):
+            f = 0
+        else:
+            f = 2* (precision * recall) / (precision + recall)
+
+        epmetrics['f1-score'][labels[i]]= f
         epmetrics['support'][labels[i]]=support
                                
     # deal with epitopes for which we had no prediction 
@@ -134,12 +139,13 @@ def precision_recall_fscore(df, ytrue, ypred):
     recall = sum(recalls)
     precision = sum(precisions)
     support = sum(supports)
-    try:
-        fscore = 2* (precision * recall) / (precision + recall)
-    except ZeroDivisionError:
-        fscore = np.nan
 
-    return accuracy, precision, recall, fscore, support, epmetrics
+    if ((precision * recall == 0)|(precision + recall == 0)):
+        f = 0
+    else:
+        f = 2* (precision * recall) / (precision + recall)
+
+    return accuracy, precision, recall, f, support, epmetrics
 
 def get_clustermetrics(df):
 
