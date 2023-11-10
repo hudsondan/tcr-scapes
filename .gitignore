@@ -9,6 +9,7 @@ conga/**
 results/**
 results_publication/**
 results_publication2/**
+results_publication2/**/**
 .RHistory
 functions/GIANA/input.txt
 functions/GIANA/input_clustered.txt
@@ -18,3 +19,4 @@ functions/gliph2/lib/metarepertoire_cluster.txt
 functions/gliph2/lib/metarepertoire_score.txt
 functions/ismart/lib/input.txt
 functions/ismart/lib/input_clustered_v3.txt
+**.ipynb
