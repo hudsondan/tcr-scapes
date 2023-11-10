@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
-from sklearn.metrics import precision_recall_fscore_support, classification_report, adjusted_mutual_info_score, balanced_accuracy_score
+from sklearn.metrics import precision_recall_fscore_support, classification_report, adjusted_mutual_info_score
+from sklearn.metrics import multilabel_confusion_matrix
+
 
 def get_purity(df):
     '''Compute cluster purity
@@ -43,7 +45,110 @@ def get_purity(df):
             'N': N,
             'Nd': Nd}
 
+def precision_recall_fscore(df, ytrue, ypred):
+
+    labels = np.unique(ytrue)
+    precisions = []# per epitope
+    recalls = []# per epitope
+    accuracies = [] # per epitope
+    weights = []# per epitope
+    supports = []
+
+    fn_per_epi = df[df['cluster'].isnull()]['epitope'].value_counts() # Retain value counts for false negatives
+    
+    epmetrics = {'accuracy':{},
+                 'precision': {},
+                 'recall': {},
+                 'f1-score': {},
+                 'support': {}}
+    for (i, cm) in enumerate(multilabel_confusion_matrix(ytrue, 
+                                                         ypred, 
+                                                         labels=labels)):# per epitope
+        # for order see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.multilabel_confusion_matrix.html
+        tn = cm[0][0]
+        fn = cm[1][0]
+        tp = cm[1][1]
+        fp = cm[0][1]
+        lbl = labels[i]
+
+        missing_fn = fn_per_epi.get(lbl, 0) 
+        fn += missing_fn
+
+        if tp+fp == 0:
+            precision = 0.0
+        else:
+            precision = tp/(tp+fp)
+
+        if tp+fn == 0:
+            recall = 0.0
+        else:
+            recall = tp/(tp+fn)
+        
+        if tp + tn == 0:
+            accuracy = 0
+        else:
+            accuracy = (tp + tn ) / (tp + tn + fp + fn)
+
+
+        # weighting='average'
+        support = sum(ytrue == lbl)
+        w = support/ytrue.shape[0]
+        weights.append(w)
+        
+        precision *= w
+        recall *= w
+        accuracy *=w
+
+        accuracies.append(accuracy)
+        precisions.append(precision)
+        recalls.append(recall)
+        supports.append(support)
+
+        epmetrics['accuracy'][labels[i]]= accuracy
+        epmetrics['precision'][labels[i]]= precision
+        epmetrics['recall'][labels[i]]= recall
+        if ((precision * recall ==0)|(precision + recall ==0)):
+            f = 0
+        else:
+            f = 2* (precision * recall) / (precision + recall)
+
+        epmetrics['f1-score'][labels[i]]= f
+        epmetrics['support'][labels[i]]=support
+                               
+    # deal with epitopes for which we had no prediction 
+    uncalled_epis = set(df['epitope']).difference(labels)
+    if len(uncalled_epis)!=0:
+        print('No predictions made for: ',uncalled_epis)
+    for i in uncalled_epis:
+
+        accuracy = 0
+        precision = 0
+        recall = 0
+        fscore = 0
+        support = sum(ytrue == i)
+        recalls.append(recall)
+        precisions.append(precision)
+        supports.append(sum(ytrue == i))
+
+        epmetrics['accuracy'][i]= accuracy
+        epmetrics['precision'][i]= precision
+        epmetrics['recall'][i]= recall
+        epmetrics['f1-score'][i]= fscore
+        epmetrics['support'][i]=support
+
+    recall = sum(recalls)
+    precision = sum(precisions)
+    support = sum(supports)
+
+    if ((precision * recall == 0)|(precision + recall == 0)):
+        f = 0
+    else:
+        f = 2* (precision * recall) / (precision + recall)
+
+    return accuracy, precision, recall, f, support, epmetrics
+
 def get_clustermetrics(df):
+
     '''Compute cluster metrics
     :param df: input data
     :type df: pandas DataFrame
@@ -54,24 +159,18 @@ def get_clustermetrics(df):
     sub = df[~df['cluster'].isnull()]
 
     # Compute overall purity metrics
-    stats= get_purity(sub)
+    stats = get_purity(sub)
 
     # Compute predictive metrics
     ypred = sub['cluster'].map(stats['most_frequent'])
     ytrue = sub['epitope']
-    try:
-        accuracy = balanced_accuracy_score(ytrue,ypred,adjusted=True)
-    except ZeroDivisionError:
-        print('Classification failed, zero classes')
-        accuracy = 0
-    precision, recall, f1score, support = precision_recall_fscore_support(ytrue, ypred, average='weighted', zero_division=0) # Total scores
     ami = adjusted_mutual_info_score(ytrue,ypred)
-    rep = classification_report(ytrue, ypred, output_dict=True, zero_division=0) # Scores per epitope
+    accuracy, precision, recall, f1score, support, epmetrics = precision_recall_fscore(
+            df, ytrue, ypred)
+    ami = adjusted_mutual_info_score(ytrue, ypred)
 
     # Compute epitope-specific metrics
     counts = {k:v for k,v in sub['epitope'].value_counts().reset_index().values.tolist()}
-
-    epmetrics = {key:{ep:rep[ep][key] for ep in counts.keys()} for key in ['precision','recall','f1-score','support']} # Pull out epitope-specific scores from classification report
     maincluster = {ep: sub[sub['epitope']==ep]['cluster'].value_counts().index[0] for ep in sub['epitope'].unique()} # Find the largest cluster per epitope
     mosfreq=stats['most_frequent']    # Find the most frequent epitope per cluster
     clusts = {ep: '-1' if ep not in list(mosfreq.values()) else [c for c in mosfreq.keys() if mosfreq[c]==ep] for ep in counts.keys()} # Map epitopes to the clusters in which they are most frequent
@@ -92,10 +191,10 @@ def get_clustermetrics(df):
             'recall':recall,    # Recall over all epitopes
             'f1-score':f1score, # F1 over all epitopes
             'support':support,  # Support
+            'epscores': epmetrics,
             'mean_clustsize': np.mean(list(stats['N'].values())), # Average cluster size
             'small_clusters': stats['Nd'],    # Number of clusters with ≤ 10 members
-            }, epmetrics, stats
-
+            }, stats  
 
 def score(df, header):
     '''Get scores for a given set of parameters
@@ -106,18 +205,13 @@ def score(df, header):
     :return: all scores, epitope-specific scores and cluster statistics
     :rtype: Pandas DataFrame'''
 
-    clusterscores, epscores, clusterstats = get_clustermetrics(df)  # Compute scores
+    clusterscores, clusterstats = get_clustermetrics(df)  # Compute scores
     
     # Prepare dataframes
-    c_scores, e_scores = [pd.DataFrame.from_dict(d,orient='index').T for d in [clusterscores, epscores]] 
+    c_scores = pd.DataFrame.from_dict(clusterscores,orient='index').T
     head = pd.DataFrame.from_dict(header,orient='index').T
     stats  = pd.DataFrame.from_dict(clusterstats).reset_index().rename(columns={'index':'cluster'})
+    stats['Model']=[header['Model']]*len(stats)
     c_scores=pd.concat([head,c_scores],axis=1).reset_index()
-    cols = ['epitope']+e_scores.columns.tolist()
-    e_scores = e_scores.reset_index()
-    e_scores.columns=cols
-    for key in header.keys():
-        e_scores[key]=[header[key]]*len(e_scores)
-        stats[key]=[header[key]]*len(stats)
 
-    return c_scores, e_scores, stats
+    return c_scores, stats

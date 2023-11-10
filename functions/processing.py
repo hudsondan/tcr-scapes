@@ -98,7 +98,7 @@ def preprocess(data, chain_selection, n=0, paired=None, tcrd_sub=None):
     :type df: Pandas DataFrame'''
 
     # Retain only paired chain instances
-    if paired:
+    if paired==True:
         print('Retaining paired chain instances')
         data = data[data['pairing']=='paired']
     # Retain only instances with epitope linkage

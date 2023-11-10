@@ -13,20 +13,22 @@ def parse(args):
 
     if args.model_selection not in ['fast',
                                     'all',
-                                    'tcrdists',
-                                    'length',
+
                                     'clustcr',
                                     'hamming',
                                     'GIANA',
                                     'gliph2',
                                     'ismart',
+                                    'length',
                                     'tcrdist',
                                     'tcrdist3',
+                                    'vcluster',
                                     ]:
-        raise AssertionError('Choose a model selection from "all","tcrdists","length","clustcr","hamming","GIANA","gliph2","ismart","tcrdist","tcrdist3"')
+        raise AssertionError('Choose a model selection from "all","fast","clustcr","hamming","GIANA","gliph2","ismart","tcrdist","tcrdist3", "vcluster')
         
     elif args.model_selection=='all':
         model_selection = ['length',
+                           'vcluster',
                             'clustcr',
                             'hamming',
                             'GIANA',
@@ -48,6 +50,11 @@ def parse(args):
        chain_selection = [args.chain_selection ]
     else:
         chain_selection=['alpha','beta']
+
+    # if not args.paired:
+    #     paired = None
+    # else:
+    #     paired = True
     
     argdict  = {'Datetime': get_time(),
                 'Input':args.input,
@@ -65,6 +72,7 @@ def parse(args):
                 'tcrdist_Radius':args.tcrdist_radius,
                 'tcrdist_Hyper': args.tcrdist_hyper,
                 'tcrdist_Subset': args.tcrdist_subset,
+                'tcrdist_Chunk': args.tcrdist_chunk,
                 'Save':args.save,
                 }
     return argdict
@@ -80,9 +88,9 @@ if __name__=='__main__':
                         help='Select chain selection from ["alpha","beta","both"]')
     parser.add_argument('-m', '--model_selection', required=False, type=str, default = 'all',
                         help='Select models from ["fast" (ClusTCR, GIANA, Hamming, Length, Random),"all" (ClusTCR, GIANA, GLIPH2, Hamming, iSMART, tcrdist3, Length, Random)]')
-    parser.add_argument('-p', '--paired', required=False, type=bool, default = True,
+    parser.add_argument('-p', '--paired', required=False, type=bool, default = None,
                         help='Select whether to retain only paired chain TCRs')
-    parser.add_argument('-ds', '--dsample', required=False, type=int, default = 500,
+    parser.add_argument('-ds', '--dsample', required=False, type=int, default = 1000,
                         help='If minimum clusters enabled, downsample to N TCRs per epitope')
     parser.add_argument('-d', '--dedup', required=False, type=bool, default = True,
                         help='Remove duplicates on a single chain selection')
@@ -90,7 +98,7 @@ if __name__=='__main__':
                         help='Number of experimental repeats')
     parser.add_argument('-no', '--n_olga', required=False, type=int, default=0,
                         help='Number of randomly generated TCRs to spike in')
-    parser.add_argument('-me', '--min_eps', required=False, type=int, default = 500,
+    parser.add_argument('-me', '--min_eps', required=False, type=int, default = 1000,
                         help='Retain epitopes having a minimum number of representatives')
     parser.add_argument('-tcdm', '--tcrdist_method', required=False, type=str, default = 'DBSCAN',
                         help='Choose tcrdist3 clustering method from ["DBSCAN","KMeans"]')
@@ -100,6 +108,8 @@ if __name__=='__main__':
                         help='Choose tcrdist3 clustering model hyperparameter (DBSCAN: n_eps, KMeans n_clusts)')
     parser.add_argument('-tcds', '--tcrdist_subset', required=False, type=bool, default = True,
                         help='Select only TCRs with a corresponding gene in the tcrdist lookup')
+    parser.add_argument('-tcdc', '--tcrdist_chunk', required=False, type=bool, default = True,
+                        help='Chunk tcrdist3 measurements to avoid OOM')
     parser.add_argument('-s', '--save', required=False, type=bool, default = None,
                         help='Save output clusters')
     parser.add_argument('-ex', '--expt', required=False, type=str, default = '',
